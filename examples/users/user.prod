@@ -1,7 +1,7 @@
 json : "{ " properties NL "}".
 
-properties  : firstname "," NL lastname ","  NL location "," NL age "," NL
-              emailid "," NL gender.
+properties  : firstname ";" NL lastname ";"  NL location ";" NL age ";" NL
+              emailid ";" NL gender.
 
 firstname   : DQ "first-name" DQ ": " DQ bag("./userdetails", 0) DQ.
 lastname    : DQ "last-name" DQ  ": " DQ bag("./userdetails", 1) DQ.

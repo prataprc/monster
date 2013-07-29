@@ -1,0 +1,24 @@
+json : "{ " properties NL "}".
+
+properties#100 : properties ";" NL property.
+               | property.
+
+property   : bag("./dictionary") ":" value.
+
+value      : TRUE.
+           | FALSE.
+           | NULL.
+           | number.
+           | string.
+           | array.
+           | json.
+
+string     : DQ bag("./dictionary") DQ.
+
+number     : range(0, 100000).
+           | range(0.0, 100.0).
+
+array      : "[" values "]".
+
+values!12  : values "," value.
+           | value.
