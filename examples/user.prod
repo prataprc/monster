@@ -1,0 +1,13 @@
+json : "{ " properties NL "}".
+
+properties  : firstname "," NL lastname ","  NL location "," NL age "," NL
+              emailid "," NL gender.
+
+firstname   : DQ "first-name" DQ ": " DQ bag("./userdetails", 0) DQ.
+lastname    : DQ "last-name" DQ  ": " DQ bag("./userdetails", 1) DQ.
+location    : DQ "address" DQ    ": " DQ address DQ.
+age         : DQ "age" DQ        ": " DQ range(15, 60) DQ.
+emailid     : DQ "emailid" DQ    ": " DQ bag("./userdetails", 2) DQ.
+address     : bag("./useraddress").
+gender      : DQ "gender" DQ     ": " DQ "male" DQ.
+            | DQ "gender" DQ     ": " DQ "female" DQ.
