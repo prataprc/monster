@@ -26,14 +26,14 @@ func bnfrange( popts ParseOpts ) Terminal {
     if toktype1 == "Float" || toktype2 == "Float" {
         minf, _ := strconv.ParseFloat(min,64)
         maxf, _ := strconv.ParseFloat(max,64)
-        fn := func() string {
+        fn := func(context Context) string {
             return fmt.Sprintf( "%v", popts.Rnd.Float64() * (maxf-minf) + minf )
         }
         t = Terminal{ name: "BnfRange", value: "", generator: fn }
     } else {
         mini, _ := strconv.Atoi(min)
         maxi, _ := strconv.Atoi(max)
-        fn := func() string {
+        fn := func(context Context) string {
             return fmt.Sprintf( "%v", popts.Rnd.Intn(maxi - mini) + mini )
         }
         t = Terminal{ name: "BnfRange", value: "", generator: fn }

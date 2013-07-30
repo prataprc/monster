@@ -5,7 +5,7 @@ func nl() Terminal {   // Builtin terminal for double quotes
     return Terminal{
         name: "NL",
         value: `\n`,
-        generator: func() string {return "\n"},
+        generator: func(context Context) string {return "\n"},
     }
 }
 
@@ -13,7 +13,7 @@ func dq() Terminal {   // Builtin terminal for double quotes
     return Terminal{
         name: "DQ",
         value: `"`,
-        generator: func() string {return `"`},
+        generator: func(context Context) string {return `"`},
     }
 }
 
@@ -21,7 +21,7 @@ func tRue() Terminal {   // Builtin terminal TRUE
     return Terminal{
         name: "TRUE",
         value: "true",
-        generator: func() string {return "true"},
+        generator: func(context Context) string {return "true"},
     }
 }
 
@@ -29,7 +29,7 @@ func fAlse() Terminal {   // Builtin terminal FALSE
     return Terminal{
         name: "FALSE",
         value: "false",
-        generator: func() string {return "false"},
+        generator: func(context Context) string {return "false"},
     }
 }
 
@@ -37,7 +37,7 @@ func null() Terminal {   // Builtin terminal NULL
     return Terminal{
         name: "NULL",
         value: "null",
-        generator: func() string {return "null"},
+        generator: func(context Context) string {return "null"},
     }
 }
 
