@@ -14,7 +14,8 @@ emailid     : DQ "emailid" DQ    ": " DQ $firstname "@gmail.com" DQ.
 gender      : DQ "gender" DQ     ": " DQ "male" DQ;
             | DQ "gender" DQ     ": " DQ "female" DQ.
 
-Context.
+%%
 
-json :
-   active = "true".
+json {{
+    context["active"] := true
+}}

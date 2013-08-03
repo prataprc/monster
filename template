@@ -1,0 +1,54 @@
+package monster
+import "os"
+import "strings"
+import "fmt"
+import "strconv"
+import "math/rand"
+
+type Context map[string]interface{}
+
+// Types of Terminal as indicated by `name` field,
+//  BnfRange, BnfBag
+type ParseOpts struct {
+    Prodfile string
+    Rnd *rand.Rand
+    S *scanner.Scanner
+    Nonterminals map[string]NonTerminal
+}
+
+// Global variables
+var Literals = make( map[string]func(string)Terminal )  // Literal handlers
+var Terminals = make( map[string]func()Terminal )       // Terminal handlers
+var Bnfs = make( map[string]func(ParseOpts)Terminal )   // Built-in functions
+
+func Parse(popts *ParseOpts) string {
+    var s scanner.Scanner
+    popts.Nonterminals = make( map[string]NonTerminal )
+    file, err := os.Open(popts.Prodfile)
+    if err != nil {
+        fmt.Printf("Error with file")
+    }
+    popts.S = &s
+    s.Init(file)
+    ntname, lrmax := parseNT( popts )
+    start := ntname
+    for ntname != "" {
+        if ntname == "Context" { break }
+        nt := parseRules(popts, ntname)
+        nt.lrmax, popts.Nonterminals[ntname] = lrmax, nt
+        ntname, lrmax = parseNT(popts)
+    }
+
+    // Parse context information
+    if ntname == "Context" {
+        if Token( popts.S ) != "." {
+            fmt.Printf("Context statement must end with a Dot(.)\n")
+            os.Exit(1)
+        }
+        parseContext(popts)
+    }
+    buildAst(popts)
+    return start
+}
+
+

@@ -1,29 +1,14 @@
 package monster
-import "text/scanner"
 import "os"
 import "strings"
 import "fmt"
 import "strconv"
 import "math/rand"
 
-type Node interface{}
 type Context map[string]interface{}
 
 // Types of Terminal as indicated by `name` field,
 //  BnfRange, BnfBag
-type Terminal struct {
-    name string
-    value string
-    generator func(context Context) string
-}
-type NonTerminal struct {
-    name string
-    value string
-    context Context
-    lrmax int
-    generator func(context Context) string
-    any [][]Node
-}
 type ParseOpts struct {
     Prodfile string
     Rnd *rand.Rand
@@ -35,15 +20,6 @@ type ParseOpts struct {
 var Literals = make( map[string]func(string)Terminal )  // Literal handlers
 var Terminals = make( map[string]func()Terminal )       // Terminal handlers
 var Bnfs = make( map[string]func(ParseOpts)Terminal )   // Built-in functions
-
-func Token(s *scanner.Scanner) string {
-    s.Scan()
-    return s.TokenText()
-}
-
-func Tokent(s *scanner.Scanner) (string, string) {
-    return scanner.TokenString(s.Scan()), s.TokenText()
-}
 
 func Parse(popts *ParseOpts) string {
     var s scanner.Scanner
@@ -76,17 +52,113 @@ func Parse(popts *ParseOpts) string {
 }
 
 // parse nonterminal tokens
-func parseNT( popts *ParseOpts ) (string, int) {
-    var lrmax int = -1
-    _, ntname := Tokent(popts.S)
-    ch := popts.S.Peek()
-    if ch == '!' || ch == '#' {
-        _ = Token(popts.S)
-        tok3 := Token(popts.S)
-        lrmax, _ = strconv.Atoi(tok3)
-    }
-    return ntname, lrmax
+func Parsec() Parsec {
+    return And( ruleblocks, Maybe(context) )
 }
+
+func ruleblocks() Parsec {
+    block = And("ruleblock", ident, colon, Many("rules", rule, pipe))
+    return Many(block)
+}
+
+func rule() Parsec {
+    part = OrdChoice( reference, nl, dq, tRue, fAlse, null, bnf,
+                      ident, literal )
+    return Many(part, nil)
+}
+
+func bnf() Parsec {
+    bargs = Kleene("BNFARGS", literal, comma),
+    return And("BNF", ident, openparan, bargs, closeparan)
+}
+
+func reference() Parsec {
+    return And( "REFERENCE", dollar, ident )
+}
+
+func routines() Node {
+    routine = And("ROUTINE", ident, routine)
+    return And("ROUTINES", percent, percent, Kleene( routine, nil ))
+}
+
+// Terminal rats
+func comment(s *Scanner) Node {
+    tok := s.Peek(1)
+    if tok.Type == "Comment" {
+        s.Scan()
+        return Terminal{ Name: tok.Type, Value: tok.Value, Tok: tok }
+    } else {
+        return nil
+    }
+}
+
+func ident(s *Scanner) Node {
+    tok := s.Peek(1)
+    if tok.Type == "Ident" {
+        s.Scan()
+        return Terminal{ Name: tok.Type, Value: tok.Value, Tok: tok }
+    } else {
+        return nil
+    }
+}
+
+func routine(s *Scanner) Node {
+    var stack = make([]int, 1000)[0:0]
+    bm := s.BookMark()
+    for {
+        tok := s.Scan()
+        if tok.Value == "{" {
+            stack = append(stack, tok.Pos.Offset)
+        } else if tok.value == "}" {
+            if len(stack) == 1 {
+                text = s.Text()[stack[0] : tok.Pos.Offset]
+                return Terminal{Name: "ROUTINE", Value:text , Tok: tok}
+            }
+        }
+    }
+    return nil
+}
+
+func literal(s *Scanner) Node {
+    tok := s.Peek(1)
+    if tok.Type == "String" || tok.Type == "Char" {
+        return Terminal{Name: tok.Type, Value: tok.Value, Tok: tok}
+    } else if tok.Type == "Int" || tok.Type == "Float" {
+        return Terminal{Name: tok.Type, Value: tok.Value, Tok: tok }
+    } else {
+        return nil
+    }
+}
+
+func terminalize(matchval string, n string, v string ) {
+    return func(s *Scanner) Node {
+        tok := s.Peek()
+        if matchval == tok.Value {
+            s.Scan()
+            return Terminal{ Name: n, Value: v, Tok: tok }
+        } else {
+            return nil
+        }
+    }
+}
+
+dot := terminalize( ".", "DOT", "." )
+percent := terminalize( "%", "PERCENT", "%" )
+colon := terminalize( ":", "COLON", ":" )
+semicolon := terminalize( ";", "SEMICOLON", ";" )
+comma := terminalize( ",", "COMMA", "," )
+pipe := terminalize( "|", "PIPE", "|" )
+dollar := terminalize( "$", "DOLLAR", "$" )
+openparan := terminalize( "(", "OPENPARAN", "(" )
+closeparan := terminalize( ")", "CLOSEPARAN", ")" )
+opencurl := terminalize( "{", "OPENPARAN", "{" )
+closecurl := terminalize( "}", "CLOSEPARAN", "}" )
+
+nl := terminalize( "NL", "NEWLINE", "\n" )
+dq := terminalize( "DQ", "DQUOTE", "\"" )
+tRue := terminalize( "TRUE", "TRUE", "true" )
+fAlse := terminalize( "FALSE", "FALSE", "false" )
+null := terminalize( "NULL", "NULL", "null" )
 
 // Parse alternate rules for nonterminal `ntname`
 func parseRules( popts *ParseOpts, ntname string ) NonTerminal {
