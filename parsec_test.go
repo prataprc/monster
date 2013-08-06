@@ -37,3 +37,7 @@ func BenchmarkGoscan(b *testing.B) {
     }
 }
 
+func BenchmarkUnprepare(b *testing.B) {
+    os.Remove( testfile )
+}
+
