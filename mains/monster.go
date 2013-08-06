@@ -1,28 +1,24 @@
 package main
-import "fmt"
-import "flag"
-import "math/rand"
-import "time"
-import "os"
-import "bytes"
-import "github.com/prataprc/monster"
+import ("fmt"; "flag"; "time"; "os"; "math/rand")
+import "monster"
 
-type options struct {
+var options struct {
     ast bool
     prodfile string
     outfile string
     seed int
+    random *rand.Rand
     count int
     help bool
 }
 
-func arguments( opts *options ) {
+func arguments() {
     seed := time.Now().UTC().Second()
-    flag.BoolVar( &opts.ast, "ast", false, "Show the ast of production" )
-    flag.IntVar( &opts.seed, "s", seed, "Seed value" )
-    flag.IntVar( &opts.count, "n", 1, "Generate n combinations" )
-    flag.StringVar( &opts.outfile, "o", "-", "Specify an output file" )
-    flag.BoolVar( &opts.help, "h", false, "Print usage and default options" )
+    flag.BoolVar( &options.ast, "ast", false, "Show the ast of production" )
+    flag.IntVar( &options.seed, "s", seed, "Seed value" )
+    flag.IntVar( &options.count, "n", 1, "Generate n combinations" )
+    flag.StringVar( &options.outfile, "o", "-", "Specify an output file" )
+    flag.BoolVar( &options.help, "h", false, "Print usage and default options" )
     flag.Parse()
 }
 
@@ -32,41 +28,28 @@ func usage() {
 }
 
 func main() {
-    var opts = options{}
-    var popts = monster.ParseOpts{}
-    var fd *os.File
-
-    arguments(&opts)
-    opts.prodfile = flag.Args()[0]
-    if opts.prodfile == ""  ||  opts.help {
+    arguments()
+    options.prodfile = flag.Args()[0]
+    if options.prodfile == ""  ||  options.help {
         usage()
         os.Exit(1)
     }
 
-    popts.Prodfile = opts.prodfile
-    popts.Rnd = rand.New( rand.NewSource( int64(opts.seed) ))
-    start := monster.Parse( &popts )
-    fmt.Printf("start - %v\n", start)
+    options.random = rand.New( rand.NewSource( int64(options.seed) ))
+    parser := monster.Y()
+    start := monster.Parse( options.prodfile, parser )
+    //fmt.Printf("start - %v\n", start)
 
-    if opts.ast {
-        monster.PrintAst( popts.Nonterminals )
+    if options.ast {
+        start.Show("")
     } else {
-        var s string
-        nt := popts.Nonterminals[ start ]
-        if opts.outfile != "-" {
-            fd, err := os.Create( opts.outfile )
-            if err != nil {
-                fmt.Printf("%v\n", err )
-                os.Exit(1)
-            }
-            defer func() { if err = fd.Close(); err != nil { panic(err) } }()
-        } else {
-            fd = os.Stdout
-        }
-        for i:=0; i < opts.count; i++ {
-            s = monster.Generate(monster.Context{}, popts, nt)
-            fd.Write( bytes.NewBufferString(s).Bytes() )
-            fd.Write( bytes.NewBufferString("\n\n").Bytes() )
+        c := make( monster.Context )
+        nonterminals, root := monster.Build(start)
+        c["_random"] = options.random
+        c["_nonterminals"] = nonterminals
+        for i:=0; i<options.count; i++ {
+            outtext := root.Generate(c)
+            fmt.Println(outtext)
         }
     }
 }

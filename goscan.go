@@ -1,8 +1,23 @@
-package parsec
+package monster
 import "text/scanner"
 import "io"
 import "fmt"
 import "os"
+
+type Scanner interface {
+    Scan() Token
+    Peek(int) Token
+    Next() Token
+    BookMark() int
+    Rewind(int)
+    Text() string
+}
+
+type Token struct {
+    Type string
+    Value string
+    Pos scanner.Position
+}
 
 type Goscan struct {
     text string
@@ -15,9 +30,10 @@ func NewGoScan(filename string) *Goscan {
     var res = make( chan interface{} )
     var req  = make( chan interface{} )
     var fd *os.File
+    var text []byte
     fd, _ = os.Open(filename)
-    text = fd.read()
-    fd.close()
+    fd.Read(text)
+    fd.Close()
     fd, _ = os.Open(filename)
     go doscan( req, res, fd )
     return &Goscan{ req: req, res: res, filename:filename }
@@ -31,14 +47,18 @@ func (s *Goscan) Scan() Token {
     var cmd = make([]interface{}, 1)
     cmd[0] = "scan"
     s.req<-cmd
-    return (<-s.res).(Token)
+    res := (<-s.res).(Token)
+    //fmt.Println(res)
+    return res
 }
 
 func (s *Goscan) Next() Token {
     var cmd = make([]interface{}, 1)
     cmd[0] = "next"
     s.req<- cmd
-    return (<-s.res).(Token)
+    res := (<-s.res).(Token)
+    //fmt.Println(res)
+    return res
 }
 
 func (s *Goscan) Peek(offset int) Token {
@@ -46,7 +66,9 @@ func (s *Goscan) Peek(offset int) Token {
     cmd[0] = "peek"
     cmd[1] = offset
     s.req <- cmd
-    return (<-s.res).(Token)
+    res := (<-s.res).(Token)
+    //fmt.Println(res)
+    return res
 }
 
 func (s *Goscan) BookMark() int {
@@ -86,10 +108,10 @@ func doscan( req <-chan interface{}, res chan<- interface{}, src io.Reader ) {
             curtok += 1
         case "peek" :
             off := cmd[1].(int)
-            if off >= 1 { panic("Offset to peek should be greater than 0") }
+            if off < 0 { panic("Offset to peek should be 0 or more") }
             res <- toks[curtok+off]
         case "next" :
-            res <- toks[curtok+1]
+            res <- toks[curtok]
         default :
             fmt.Printf("Unknown command to goscan : %v\n", cmd[0].(string))
         }
@@ -104,8 +126,10 @@ func fullscan( s *scanner.Scanner ) []Token {
             Value: s.TokenText(),
             Pos: s.Pos(),
         }
-        if tok.Type == "EOF" { break }
         toks = append(toks, tok )
+        if tok.Type == "EOF" { 
+            break
+        }
     }
     return toks
 }

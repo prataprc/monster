@@ -1,24 +1,24 @@
 json : "{ " properties NL "}".
 
-properties : properties ";" NL property;
+properties : properties "," NL property {30000}
            | property.
 
 property   : DQ bag("../_bags/web2") DQ ":" value.
 
-value   : TRUE;
-        | FALSE;
-        | NULL;
-        | number;
-        | string;
-        | array;
-        | json.
+value   : TRUE
+        | FALSE
+        | NULL
+        | number
+        | string
+        | array
+        | json {100}.
 
 string  : DQ bag("../_bags/web2") DQ.
 
-number  : range(0, 100000);
-        | range(0.0, 100.0).
+number  : range(0, 100000)
+        | rangef(0.0, 100.0) {900}.
 
 array   : "[" values "]".
 
-values  : values "," value;
+values  : values "," value
         | value.

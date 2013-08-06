@@ -1,21 +1,13 @@
 json : "{ " properties NL "}".
 
-properties  : DQ "first-name" DQ ": " DQ firstname DQ ";" NL
-              lastname ";"  NL
-              age ";" NL
-              emailid ";" NL
-              gender ";" NL
-              DQ "active" DQ ": " $active.
+properties  : DQ "first-name" DQ ": " DQ fname DQ "," NL
+              lastname age emailid gender.
 
-firstname   : bag("../_bags/propernames").
-lastname    : DQ "last-name" DQ  ": " DQ bag("../_bags/propernames") DQ.
-age         : DQ "age" DQ        ": " DQ range(15, 60) DQ.
-emailid     : DQ "emailid" DQ    ": " DQ $firstname "@gmail.com" DQ.
-gender      : DQ "gender" DQ     ": " DQ "male" DQ;
-            | DQ "gender" DQ     ": " DQ "female" DQ.
+lastname    : DQ "last-name"  DQ ": " DQ bag("../_bags/propernames") DQ "," NL.
+age         : DQ "age"        DQ ": " DQ range(15, 60)               DQ "," NL.
+emailid     : DQ "emailid"    DQ ": " DQ $fname "@gmail.com"     DQ "," NL.
+active      : DQ "active" DQ ": " TRUE.
+gender      : DQ "gender" DQ     ": " DQ "male" DQ "," NL
+            | DQ "gender" DQ     ": " DQ "female" DQ ",".
 
-%%
-
-json {{
-    context["active"] := true
-}}
+fname       : bag("../_bags/propernames").

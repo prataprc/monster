@@ -1,46 +1,22 @@
 package monster
+import ("fmt"; "strconv"; "math/rand")
 
-import "fmt"
-import "os"
-import "strconv"
-
-func bnfrange( popts ParseOpts ) Terminal {
-    var t Terminal
-    if Token(popts.S) != "(" {
-        fmt.Printf("bnf_range error")
-        os.Exit(1)
-    }
-    min, max, toktype2 := "", "", ""
-    toktype1, min := Tokent(popts.S)
-
-    tok := Token(popts.S)
-    if tok == "," {
-        toktype2, max = Tokent(popts.S)
-        tok = Token(popts.S)
-    }
-    if tok != ")" {
-        fmt.Printf("Syntax error in bnf_range")
-        os.Exit(1)
-    }
-
-    if toktype1 == "Float" || toktype2 == "Float" {
-        minf, _ := strconv.ParseFloat(min,64)
-        maxf, _ := strconv.ParseFloat(max,64)
-        fn := func(context Context) string {
-            return fmt.Sprintf( "%v", popts.Rnd.Float64() * (maxf-minf) + minf )
-        }
-        t = Terminal{ name: "BnfRange", value: "", generator: fn }
+func bnfrange( c Context, nt *NonTerminal ) string {
+    var min int = 0
+    var max int
+    rnd := c["_random"].(*rand.Rand)
+    cs := nt.Children // Arguments
+    if len(cs) == 2 {
+        min, _ = strconv.Atoi(cs[0].(*IntTerminal).Value)
+        max, _ = strconv.Atoi(cs[1].(*IntTerminal).Value)
+    } else if len(cs) == 1 {
+        min, _ = strconv.Atoi(cs[0].(*IntTerminal).Value)
     } else {
-        mini, _ := strconv.Atoi(min)
-        maxi, _ := strconv.Atoi(max)
-        fn := func(context Context) string {
-            return fmt.Sprintf( "%v", popts.Rnd.Intn(maxi - mini) + mini )
-        }
-        t = Terminal{ name: "BnfRange", value: "", generator: fn }
+        panic("Error: Atleast one argument expected in range() BNF")
     }
-    return t
+    return fmt.Sprintf( "%v", rnd.Intn(max-min) + min )
 }
 
 func init() {
-    Bnfs["range"] = bnfrange
+    BnfCallbacks["range"] = bnfrange
 }
