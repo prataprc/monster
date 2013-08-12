@@ -1,5 +1,9 @@
 package monster
-import ("fmt"; "os"; "strconv"; "math/rand"; "encoding/csv")
+import "fmt"
+import "os"
+import "strconv"
+import "math/rand"
+import "encoding/csv"
 
 var Bagfiles = make( map[string][][]string )    // A cache of bag files.
 

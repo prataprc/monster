@@ -1,7 +1,27 @@
 package monster
-import ("strings"; "math/rand"; "fmt")
+import "strings"
+import "math/rand"
+import "fmt"
 
 var x = fmt.Sprintf("keep 'fmt' import during debugging"); // FIXME
+
+// INode interface for NonTerminal
+func (n *NonTerminal) Show( prefix string ) {
+    fmt.Printf( "%v", n.Repr(prefix) )
+    for _, n := range n.Children {
+        n.Show(prefix + "  ")
+    }
+}
+func (n *NonTerminal) Repr( prefix string ) string {
+    return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v \n", n.Name, n.Value)
+}
+func (n *NonTerminal) Generate(c Context) string {
+    s := ""
+    for _, n := range n.Children {
+        s += n.(*NonTerminal).Generate(c)
+    }
+    return s
+}
 
 // Reference non-terminal
 type ReferenceNT struct {
@@ -43,7 +63,8 @@ func (n *RuleNT) Generate(c Context) string {
         val, ok := n.(*IdentTerminal)
         if ok && val.Name == "Ident" {
             //fmt.Println(val.Value)
-            n := c["_nonterminals"].(map[string]INode)[val.Value].(*RuleLinesNT)
+            m := c["_nonterminals"].(map[string]INode)
+            n := m[val.Value].(*RuleLinesNT)
             s = n.Generate(c)
             c[val.Value] = s
             keys = append( keys, val.Name )
@@ -62,6 +83,9 @@ func (n *RuleNT) Generate(c Context) string {
 type RuleLineNT struct {
     NonTerminal
 }
+func (n *RuleLineNT) Generate(c Context) string {
+    return n.Children[0].Generate(c)
+}
 
 // rule-lines non-terminal
 type RuleLinesNT struct {
@@ -69,9 +93,9 @@ type RuleLinesNT struct {
 }
 func (n *RuleLinesNT) Generate(c Context) string {
     ruleline := pickRuleLine( c, n.Children )
-    return ruleline.Generate(c)
+    return ruleline.(*RuleLineNT).Generate(c)
 }
-func pickRuleLine( c Context, cs []INode ) INode {
+func pickRuleLine(c Context, cs []INode) INode {
     var index = make(map[int]INode)
     accw := 0
     for _, ruleline := range cs {
@@ -91,13 +115,12 @@ func pickRuleLine( c Context, cs []INode ) INode {
     return cs[r]
 }
 
-
 // rule-block non terminal
 type RuleBlockNT struct {
     NonTerminal
 }
 func (n *RuleBlockNT) Generate(c Context) string {
-    return n.Children[2].Generate(c)
+    return n.Children[2].(*RuleLinesNT).Generate(c)
 }
 
 

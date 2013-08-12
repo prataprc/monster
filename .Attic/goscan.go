@@ -1,4 +1,4 @@
-package monster
+package parsec
 import "text/scanner"
 import "io"
 import "fmt"
@@ -127,7 +127,7 @@ func fullscan( s *scanner.Scanner ) []Token {
             Pos: s.Pos(),
         }
         toks = append(toks, tok )
-        if tok.Type == "EOF" { 
+        if tok.Type == "EOF" {
             break
         }
     }

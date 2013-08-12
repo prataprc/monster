@@ -1,7 +1,28 @@
 package monster
-import ("strconv"; "fmt"; "reflect")
+import "strconv"
+import "fmt"
+import "reflect"
+import "io/ioutil"
+import "github.com/prataprc/golib/parsec"
 
+type Terminal struct {
+    Name string         // typically contains terminal's token type
+    Value string        // value of the terminal
+    Tok parsec.Token    // Actual token obtained from the scanner
+}
+type NonTerminal struct {
+    Name string         // typically contains terminal's token type
+    Value string        // value of the terminal
+    Children []INode
+}
+type INode interface{   // AST functions
+    Show(string)
+    Repr(prefix string) string
+    Generate(c Context) string
+}
 type Context map[string]interface{}
+
+var EMPTY = Terminal{Name: "EMPTY", Value:""}
 
 var y = fmt.Sprintf("keep 'fmt' import during debugging"); // FIXME
 
@@ -9,9 +30,10 @@ var y = fmt.Sprintf("keep 'fmt' import during debugging"); // FIXME
 // Built-in functions
 var BnfCallbacks = make( map[string]func(Context, *NonTerminal)string )
 
-func Parse(prodfile string, parser Parsec) INode {
-    s := NewGoScan(prodfile)
-    return parser(s)
+func Parse(prodfile string) INode {
+    bs, _ := ioutil.ReadFile(prodfile)
+    s := parsec.NewGoScan(bs)
+    return Y()(s).(INode)
 }
 
 func Build( start INode ) (map[string]INode, INode) {
@@ -32,134 +54,139 @@ func Build( start INode ) (map[string]INode, INode) {
 }
 
 // parse nonterminal tokens
-func Y() Parsec {
-    nodify := func(n *NonTerminal) INode {
-        return &StartNT{NonTerminal{Name:"RULEBLOCKS", Children:n.Children}}
-    }
-    return Many("y", nodify, true, ruleblock(), end())
-}
-
-func ruleblock() Parsec {
-    nodify := func(n *NonTerminal) INode {
-        // fmt.Printf("Parsing nonterminal %v ... \n", n.Children[0].(*IdentTerminal).Value)
-        return &RuleBlockNT{NonTerminal{Name:"RULEBLOCK", Children:n.Children}}
-    }
-    return And( "ruleblock", nodify, true, ident(), colon(), rulelines(), dot())
-}
-
-func rulelines() Parsec {
-    nodify := func(n *NonTerminal) INode {
-        return &RuleLinesNT{NonTerminal{Name:"RULELINES", Children:n.Children}}
-    }
-    return Many("rulelines", nodify, true, ruleline(), pipe())
-}
-
-func ruleline() Parsec {
-    nodify := func(n *NonTerminal) INode {
-        return &RuleLineNT{NonTerminal{Name:"RULELINE", Children:n.Children}}
-    }
-    return And( "ruleline", nodify, true, rule(), ruleOption() )
-}
-
-func rule() Parsec {
-    nodify := func(n *NonTerminal) INode {
-        return &RuleNT{NonTerminal{Name:"RULE", Children:n.Children}}
-    }
-    // dot, pipe and ruleOption Parsec should not be included.
-    part := OrdChoice(
-                "part", nl(), dq(), tRue(), fAlse(), null(), reference(), bnf(),
-                ident(), literal() )
-    return Many( "rule", nodify, true, part )
-}
-
-func ruleOption() Parsec {
-    nodifyargs := func(n *NonTerminal) INode {
-        n.Name = "RULEARGS"
-        return n
-    }
-    nodify := func(n *NonTerminal) INode {
-        var cs []INode
-        var weight = 100
-        if n != nil {
-            cs = n.Children
+func Y() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            nt := NonTerminal{Name:"RULEBLOCKS", Children:inodes(ns)}
+            return &StartNT{nt}
         }
-        if len(cs) >= 3 {
-            args := cs[1].(*NonTerminal)
-            weight, _ = strconv.Atoi( args.Children[0].(*IntTerminal).Value )
+        return parsec.Many( "y", nodify, true, ruleblock, parsec.End )()(s)
+    }
+}
+
+func ruleblock() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            nt := NonTerminal{Name:"RULEBLOCK", Children:inodes(ns)}
+            return &RuleBlockNT{nt}
         }
-        return &RuleOptionsNT{NonTerminal{Name:"RULEOPTIONS"},weight}
+        return parsec.And(
+            "ruleblock", nodify, true, ident, colon, rulelines, dot,
+        )()(s)
     }
-    args := Many( "ruleargs", nodifyargs, true, literal(), comma() )
-    return And( "ruleoption", nodify, false, opencurl(), args, closecurl() )
 }
 
-func bnf() Parsec {
-    nodifyargs := func(n *NonTerminal) INode {
-        n.Name = "BNFARGS"
-        return n
+func rulelines() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            nt := NonTerminal{Name:"RULELINES", Children:inodes(ns)}
+            return &RuleLinesNT{nt}
+        }
+        return parsec.Many( "rulelines", nodify, true, ruleline, pipe )()(s)
     }
-    nodify := func(n *NonTerminal) INode {
-        if n == nil { return nil }
-        return &BnfNT{NonTerminal{Name:"BNF", Children:n.Children}}
-    }
-    bargs := Kleene( "bnfargs", nodifyargs, literal(), comma())
-    return And( "bnf", nodify, false, ident(), openparan(), bargs, closeparan())
 }
 
-func reference() Parsec {
-    nodify := func(n *NonTerminal) INode {
-        if n == nil { return nil }
-        return &ReferenceNT{NonTerminal{Name:"REFERENCE", Children:n.Children}}
+func ruleline() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            nt := NonTerminal{Name:"RULELINE", Children:inodes(ns)}
+            return &RuleLineNT{nt}
+        }
+        return parsec.And( "ruleline", nodify, true, rule, ruleOption )()(s)
     }
-    return And( "reference", nodify, false, dollar(), ident() )
+}
+
+func rule() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            nt := NonTerminal{Name:"RULE", Children:inodes(ns)}
+            return &RuleNT{nt}
+        }
+        nodifypart := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            if ns == nil {
+                return nil
+            } else {
+                return ns[0]
+            }
+        }
+        // dot, pipe and ruleOption Parsec should not be included.
+        part := parsec.OrdChoice(
+            "part", nodifypart, false, nl, dq, tRue, fAlse, null,
+            literal, reference, bnf, ident,
+        )
+        return parsec.Many( "rule", nodify, true, part )()(s)
+    }
+}
+
+func ruleOption() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            return &NonTerminal{Name: "RULEARGS", Children:inodes(ns)}
+        }
+        nodify := func(n []parsec.ParsecNode) parsec.ParsecNode {
+            var weight = 100
+            cs := inodes(n)
+            if len(cs) >= 3 {
+                args := cs[1].(*NonTerminal)
+                weight, _ = strconv.Atoi( args.Children[0].(*IntTerminal).Value )
+            }
+            nt := NonTerminal{Name: "RULEOPTIONS", Children:cs}
+            return &RuleOptionsNT{nt, weight}
+        }
+        args := parsec.Many("ruleargs", nodifyargs, true, literal, comma)
+        return parsec.And(
+            "ruleoption", nodify, false, opencurl, args, closecurl,
+        )()(s)
+    }
+}
+
+func bnf() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            return &NonTerminal{Name: "BNFARGS", Children:inodes(ns)}
+        }
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            if ns == nil { return nil }
+            nt := NonTerminal{Name:"BNF", Children:inodes(ns)}
+            return &BnfNT{nt}
+        }
+        bargs := parsec.Kleene( "bnfargs", nodifyargs, literal, comma )
+        return parsec.And(
+            "bnf", nodify, false, ident, openparan, bargs, closeparan,
+        )()(s)
+    }
+}
+
+func reference() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
+            if ns == nil { return nil }
+            nt := NonTerminal{Name:"REFERENCE", Children:inodes(ns)}
+            return &ReferenceNT{nt}
+        }
+        return parsec.And( "reference", nodify, false, dollar, ident )()(s)
+    }
 }
 
 // Terminal rats
-func comment() Parsec {
-    return func(s Scanner) INode {
+func comment() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
         tok := s.Peek(0)
-        //fmt.Println("comment")
         if tok.Type == "Comment" {
             s.Scan()
-            t := Terminal{Name:tok.Type, Value:tok.Value, Tok:tok}
-            return &CommentTerminal{t}
+            return &CommentTerminal{terminal(tok)}
         } else {
             return nil
         }
     }
 }
 
-func ident() Parsec {
-    return func(s Scanner) INode {
+func ident() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
         tok := s.Peek(0)
-        //fmt.Println("ident")
         if tok.Type == "Ident" {
             s.Scan()
-            t := Terminal{Name: tok.Type, Value: tok.Value, Tok: tok}
-            return &IdentTerminal{t}
-        } else {
-            return nil
-        }
-    }
-}
-
-func literal() Parsec {
-    return func(s Scanner) INode {
-        //fmt.Println("literal")
-        tok := s.Peek(0)
-        t := Terminal{Name: tok.Type, Value: tok.Value, Tok: tok}
-        if tok.Type == "String" {
-            s.Scan()
-            return &StrTerminal{t}
-        } else if tok.Type == "Char" {
-            s.Scan()
-            return &CharTerminal{t}
-        } else if tok.Type == "Int" {
-            s.Scan()
-            return &IntTerminal{t}
-        } else if tok.Type == "Float" {
-            s.Scan()
-            return &FloatTerminal{t}
+            return &IdentTerminal{terminal(tok)}
         } else {
             return nil
         }
@@ -187,42 +214,68 @@ var fAlse = bnlTerminalize( "FALSE", "FALSE", "false" )
 var null = bnlTerminalize( "NULL", "NULL", "null" )
 
 // Parsec functions for terminals
-func prodTerminalize(matchval string, n string, v string ) func()Parsec {
-    return func() Parsec {
-        return func(s Scanner) INode {
-            //fmt.Println("prodterm")
-            tok := s.Peek(0)
-            if matchval == tok.Value {
-                s.Scan()
-                return &ProdTerminal{Terminal{Name: n, Value: v, Tok: tok}}
-            } else {
+func prodTerminalize(matchval string, n string, v string ) parsec.Parsec {
+    return func() parsec.Parser {
+        return func(s parsec.Scanner) parsec.ParsecNode {
+            term := parsec.Terminalize(matchval, n, v)()(s)
+            if term == nil {
                 return nil
+            } else {
+                pt := term.(*parsec.Terminal)
+                t := Terminal{Name:pt.Name, Value:pt.Value, Tok:pt.Tok}
+                return &ProdTerminal{t}
             }
         }
     }
 }
 
-func bnlTerminalize(matchval string, n string, v string ) func()Parsec {
-    return func() Parsec {
-        return func(s Scanner) INode {
-            //fmt.Println("bnlterm")
-            tok := s.Peek(0)
-            if matchval == tok.Value {
-                s.Scan()
-                return &BNLTerminal{Terminal{Name: n, Value: v, Tok: tok }}
-            } else {
+func bnlTerminalize(matchval string, n string, v string ) parsec.Parsec {
+    return func() parsec.Parser {
+        return func(s parsec.Scanner) parsec.ParsecNode {
+            term := parsec.Terminalize(matchval, n, v)()(s)
+            if term == nil {
                 return nil
+            } else {
+                pt := term.(*parsec.Terminal)
+                t := Terminal{Name:pt.Name, Value:pt.Value, Tok:pt.Tok}
+                return &BNLTerminal{t}
             }
         }
     }
 }
 
-func end() Parsec {
-    return func(s Scanner) INode {
-        tok := s.Next()
-        if tok.Type == "EOF" {
+// Parsec functions to match `String`, `Char`, `Int`, `Float` literals
+func literal() parsec.Parser {
+    return func(s parsec.Scanner) parsec.ParsecNode {
+        tok := s.Peek(0)
+        if tok.Type == "String" {
+            s.Scan()
+            return &StrTerminal{terminal(tok)}
+        } else if tok.Type == "Char" {
+            s.Scan()
+            return &CharTerminal{terminal(tok)}
+        } else if tok.Type == "Int" {
+            s.Scan()
+            return &IntTerminal{terminal(tok)}
+        } else if tok.Type == "Float" {
+            s.Scan()
+            return &FloatTerminal{terminal(tok)}
+        } else {
+            //fmt.Println(tok.Type, tok.Value)
             return nil
         }
-        return &Terminal{Name: tok.Type, Value: tok.Value, Tok: tok }
     }
+}
+
+func inodes( pns []parsec.ParsecNode ) []INode {
+    ins := make([]INode, 0)
+    for _, n := range pns {
+        ins = append( ins, n.(INode) )
+    }
+    return ins
+}
+
+func terminal(tok parsec.Token) Terminal {
+    //fmt.Println(tok.Type, tok.Value)
+    return Terminal{Name:tok.Type, Value:tok.Value, Tok:tok}
 }

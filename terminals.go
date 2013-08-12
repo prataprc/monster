@@ -1,6 +1,17 @@
 package monster
 import "fmt"
 
+// INode interface for Terminal
+func (t *Terminal) Show( prefix string ) {
+    fmt.Println( t.Repr(prefix) )
+}
+func (t *Terminal) Repr( prefix string ) string {
+    return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v ", t.Name, t.Value)
+}
+func (t *Terminal) Generate(c Context) string {
+    return t.Value
+}
+
 // Indentifier terminal
 type CommentTerminal struct {
     Terminal

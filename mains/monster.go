@@ -36,9 +36,7 @@ func main() {
     }
 
     options.random = rand.New( rand.NewSource( int64(options.seed) ))
-    parser := monster.Y()
-    start := monster.Parse( options.prodfile, parser )
-    //fmt.Printf("start - %v\n", start)
+    start := monster.Parse( options.prodfile )
 
     if options.ast {
         start.Show("")
