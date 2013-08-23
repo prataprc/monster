@@ -1,6 +1,6 @@
 package main
 import ("fmt"; "flag"; "time"; "os"; "math/rand")
-import "monster"
+import "github.com/prataprc/monster"
 
 var options struct {
     ast bool

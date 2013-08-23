@@ -11,7 +11,7 @@ value   : TRUE
         | number
         | string
         | array
-        | json {100}.
+        | json {10}.
 
 string  : DQ bag("../_bags/web2") DQ.
 
