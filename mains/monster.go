@@ -2,6 +2,7 @@ package main
 import ("fmt"; "flag"; "time"; "os"; "math/rand")
 import "github.com/prataprc/monster"
 
+type Interface interface{}
 var options struct {
     ast bool
     prodfile string
@@ -36,7 +37,7 @@ func main() {
     }
 
     options.random = rand.New( rand.NewSource( int64(options.seed) ))
-    start := monster.Parse( options.prodfile )
+    start := monster.Parse( options.prodfile, make(map[string]interface{}) )
 
     if options.ast {
         start.Show("")

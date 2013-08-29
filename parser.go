@@ -5,6 +5,7 @@ import "reflect"
 import "io/ioutil"
 import "github.com/prataprc/golib/parsec"
 
+type Interface interface{}
 type Terminal struct {
     Name string         // typically contains terminal's token type
     Value string        // value of the terminal
@@ -30,9 +31,9 @@ var y = fmt.Sprintf("keep 'fmt' import during debugging"); // FIXME
 // Built-in functions
 var BnfCallbacks = make( map[string]func(Context, *NonTerminal)string )
 
-func Parse(prodfile string) INode {
+func Parse(prodfile string, opts map[string]interface{}) INode {
     bs, _ := ioutil.ReadFile(prodfile)
-    s := parsec.NewGoScan(bs)
+    s := parsec.NewGoScan(bs, opts)
     return Y()(s).(INode)
 }
 
