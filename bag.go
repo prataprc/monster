@@ -16,7 +16,7 @@ func bag( c Context, nt *NonTerminal ) string {
         filename = cs[0].(*Terminal).Value
         index, _ = strconv.Atoi(cs[1].(*Terminal).Value)
     } else if len(cs) == 1 {
-        filename, index = cs[0].(*StrTerminal).Value, 0
+        filename, index = cs[0].(*Terminal).Value, 0
     } else {
         panic("Error: Atleast one argument expected in bag() BNF")
     }

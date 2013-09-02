@@ -7,10 +7,10 @@ func bnfrangef( c Context, nt *NonTerminal ) string {
     rnd := c["_random"].(*rand.Rand)
     cs := nt.Children // Arguments
     if len(cs) == 2 {
-        min, _ = strconv.ParseFloat(cs[0].(*FloatTerminal).Value, 64)
-        max, _ = strconv.ParseFloat(cs[1].(*FloatTerminal).Value, 64)
+        min, _ = strconv.ParseFloat(cs[0].(*Terminal).Value, 64)
+        max, _ = strconv.ParseFloat(cs[1].(*Terminal).Value, 64)
     } else if len(cs) == 1 {
-        min, _ = strconv.ParseFloat(cs[0].(*FloatTerminal).Value, 64)
+        min, _ = strconv.ParseFloat(cs[0].(*Terminal).Value, 64)
     } else {
         panic("Error: Atleast one argument expected in range() BNF")
     }

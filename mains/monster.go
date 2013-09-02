@@ -1,6 +1,7 @@
 package main
 import ("fmt"; "flag"; "time"; "os"; "math/rand")
 import "github.com/prataprc/monster"
+import "github.com/prataprc/golib"
 
 type Interface interface{}
 var options struct {
@@ -37,7 +38,8 @@ func main() {
     }
 
     options.random = rand.New( rand.NewSource( int64(options.seed) ))
-    start := monster.Parse( options.prodfile, make(map[string]interface{}) )
+    conf := make(golib.Config)
+    start := monster.Parse(options.prodfile, conf)
 
     if options.ast {
         start.Show("")

@@ -62,7 +62,6 @@ func (n *RuleNT) Generate(c Context) string {
     for _, n := range n.Children {
         val, ok := n.(*IdentTerminal)
         if ok && val.Name == "Ident" {
-            //fmt.Println(val.Value)
             m := c["_nonterminals"].(map[string]INode)
             n := m[val.Value].(*RuleLinesNT)
             s = n.Generate(c)
