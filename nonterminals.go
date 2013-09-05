@@ -1,15 +1,18 @@
 package monster
-import "strings"
-import "math/rand"
-import "fmt"
+import (
+    "strings"
+    "math/rand"
+    "fmt"
+    "github.com/prataprc/golib/parsec"
+)
 
-var x = fmt.Sprintf("keep 'fmt' import during debugging"); // FIXME
+var _ = fmt.Sprintf("keep 'fmt' import during debugging");
 
 // INode interface for NonTerminal
-func (n *NonTerminal) Show( prefix string ) {
+func (n *NonTerminal) Show(prefix string) {
     fmt.Printf( "%v", n.Repr(prefix) )
     for _, n := range n.Children {
-        n.Show(prefix + "  ")
+        n.(*NonTerminal).Show(prefix + "  ")
     }
 }
 func (n *NonTerminal) Repr( prefix string ) string {
@@ -23,32 +26,53 @@ func (n *NonTerminal) Generate(c Context) string {
     return s
 }
 
-// Reference non-terminal
-type ReferenceNT struct {
+// Start
+type StartNT struct {
     NonTerminal
-}
-func (n *ReferenceNT) Generate(c Context) string {
-    cs := n.Children
-    return c[ cs[1].(*IdentTerminal).Value ].(string)
 }
 
-// built-in function non-terminal
-type BnfNT struct {
+// rule-block non terminal
+type RuleBlockNT struct {
     NonTerminal
 }
-func (n *BnfNT) Generate(c Context) string {
-    cs := n.Children
-    name := cs[0].(*IdentTerminal).Value
-    return BnfCallbacks[ name ]( c, cs[2].(*NonTerminal) )
+func (n *RuleBlockNT) Generate(c Context) string {
+    return n.Children[1].(*RuleLinesNT).Generate(c)
 }
 
-// rule-options non-terminal
-type RuleOptionsNT struct {
+// rule-lines non-terminal
+type RuleLinesNT struct {
     NonTerminal
-    Weight int
 }
-func (n *RuleOptionsNT) Generate(c Context) string {
-    return ""
+func (n *RuleLinesNT) Generate(c Context) string {
+    var index = make(map[int]*RuleLineNT)
+    accw := 0
+    for _, nt := range n.Children {
+        ruleline := nt.(*RuleLineNT)
+        ruleopts := ruleline.ruleopts
+        if ruleopts != nil && ruleopts.weight > 0 {
+            accw += ruleopts.weight
+            ruleopts.weight -= 1
+        } else {
+            accw += 10 // Default weightage
+        }
+        index[accw] = ruleline
+    }
+    r := c["_random"].(*rand.Rand).Intn(accw)
+    for i, ruleline := range index {
+        if r < i {
+            return ruleline.Generate(c)
+        }
+    }
+    return n.Children[r].(*RuleLineNT).Generate(c)
+}
+
+// rule-line non-terminal
+type RuleLineNT struct {
+    rule *RuleNT
+    ruleopts *RuleOptionsNT
+}
+func (n *RuleLineNT) Generate(c Context) string {
+    return n.rule.Generate(c)
 }
 
 // rule non-terminal
@@ -57,20 +81,19 @@ type RuleNT struct {
 }
 func (n *RuleNT) Generate(c Context) string {
     var s string
-    keys := make( []string, len(n.Children) )[0:0]
-    outs := make( []string, len(n.Children) )[0:0]
-    for _, n := range n.Children {
-        val, ok := n.(*IdentTerminal)
-        if ok && val.Name == "Ident" {
+    keys := make([]string, 0, len(n.Children))
+    outs := make([]string, 0, len(n.Children))
+    for _, child := range n.Children {
+        if term, ok := child.(*Terminal); ok && (term.Name == "IDENT") {
             m := c["_nonterminals"].(map[string]INode)
-            n := m[val.Value].(*RuleLinesNT)
-            s = n.Generate(c)
-            c[val.Value] = s
-            keys = append( keys, val.Name )
+            nonterm := m[term.Value].(*RuleLinesNT)
+            s = nonterm.Generate(c)
+            c[term.Value] = s
+            keys = append(keys, term.Name)
         } else {
-            s = n.Generate(c)
+            s = child.(INode).Generate(c)
         }
-        outs = append( outs, s )
+        outs = append(outs, s)
     }
     for _, key := range keys {
         delete(c, key)
@@ -78,52 +101,35 @@ func (n *RuleNT) Generate(c Context) string {
     return strings.Join( outs, "" )
 }
 
-// rule-line non-terminal
-type RuleLineNT struct {
-    NonTerminal
-}
-func (n *RuleLineNT) Generate(c Context) string {
-    return n.Children[0].Generate(c)
+// rule-options non-terminal
+type RuleOptionsNT struct {
+    weight int
 }
 
-// rule-lines non-terminal
-type RuleLinesNT struct {
+// built-in function non-terminal
+type BnfNT struct {
     NonTerminal
+    callName string
+    args []parsec.ParsecNode
 }
-func (n *RuleLinesNT) Generate(c Context) string {
-    ruleline := pickRuleLine( c, n.Children )
-    return ruleline.(*RuleLineNT).Generate(c)
-}
-func pickRuleLine(c Context, cs []INode) INode {
-    var index = make(map[int]INode)
-    accw := 0
-    for _, ruleline := range cs {
-        nt := ruleline.(*RuleLineNT).Children[1].(*RuleOptionsNT)
-        if nt.Weight <= 0 { continue }
-        accw += nt.Weight
-        nt.Weight -= 1
-        index[accw] = ruleline
-    }
-    if accw > 0 {
-        r := c["_random"].(*rand.Rand).Intn(accw)
-        for i, n := range index {
-            if r <= i { return n }
+func (n *BnfNT) Generate(c Context) string {
+    args := make([]interface{}, 0)
+    for _, arg := range n.args {
+        if term, ok := arg.(*Terminal); ok {
+            args = append(args, term.Value)
+        } else {
+            refnt := arg.(*ReferenceNT)
+            args = append(args, c[refnt.Value])
         }
     }
-    r := c["_random"].(*rand.Rand).Intn( len(cs) )
-    return cs[r]
+    return BnfCallbacks[n.callName](c, args)
 }
 
-// rule-block non terminal
-type RuleBlockNT struct {
+// Reference non-terminal
+type ReferenceNT struct {
     NonTerminal
 }
-func (n *RuleBlockNT) Generate(c Context) string {
-    return n.Children[2].(*RuleLinesNT).Generate(c)
+func (n *ReferenceNT) Generate(c Context) string {
+    return c[n.Value].(string)
 }
 
-
-// Start
-type StartNT struct {
-    NonTerminal
-}

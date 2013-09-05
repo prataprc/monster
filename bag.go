@@ -1,22 +1,24 @@
 package monster
-import "fmt"
-import "os"
-import "strconv"
-import "math/rand"
-import "encoding/csv"
 
-var Bagfiles = make( map[string][][]string )    // A cache of bag files.
+import (
+    "fmt"
+    "os"
+    "strconv"
+    "math/rand"
+    "encoding/csv"
+)
 
-func bag( c Context, nt *NonTerminal ) string {
+var Bagfiles = make(map[string][][]string) // A cache of bag files.
+
+func bag(c Context, args []interface{}) string {
     var filename string
     var index int
 
-    cs := nt.Children // Arguments
-    if len(cs) == 2 {
-        filename = cs[0].(*Terminal).Value
-        index, _ = strconv.Atoi(cs[1].(*Terminal).Value)
-    } else if len(cs) == 1 {
-        filename, index = cs[0].(*Terminal).Value, 0
+    if len(args) == 2 {
+        filename = args[0].(string)
+        index, _ = strconv.Atoi(args[1].(string))
+    } else if len(args) == 1 {
+        filename, index = args[0].(string), 0
     } else {
         panic("Error: Atleast one argument expected in bag() BNF")
     }
@@ -35,7 +37,7 @@ func rangeOnFile(rnd *rand.Rand, filename string, index int) string {
     return record[index]
 }
 
-func readBag( filename string ) [][]string {
+func readBag(filename string) [][]string {
     fd, err := os.Open(filename)
     if err != nil {
         fmt.Printf( "Cannot open file %v\n", filename )

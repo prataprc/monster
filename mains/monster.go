@@ -3,7 +3,6 @@ import ("fmt"; "flag"; "time"; "os"; "math/rand")
 import "github.com/prataprc/monster"
 import "github.com/prataprc/golib"
 
-type Interface interface{}
 var options struct {
     ast bool
     prodfile string
@@ -44,7 +43,7 @@ func main() {
     if options.ast {
         start.Show("")
     } else {
-        c := make( monster.Context )
+        c := make(monster.Context)
         nonterminals, root := monster.Build(start)
         c["_random"] = options.random
         c["_nonterminals"] = nonterminals

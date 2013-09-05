@@ -1,6 +1,6 @@
 json : "{ " properties NL "}".
 
-properties : properties "," NL property {300}
+properties : properties "," NL property {30}
            | property.
 
 property   : DQ bag("../_bags/web2") DQ ":" value.
