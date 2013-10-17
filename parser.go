@@ -24,6 +24,7 @@ type NonTerminal struct {
 type INode interface{   // AST functions
     Show(string)
     Repr(prefix string) string
+    Initialize(c Context)
     Generate(c Context) string
 }
 
@@ -53,6 +54,12 @@ func Build(start INode) (map[string]INode, INode) {
         nonterminals[term.Value] = rb.Children[1].(INode)
     }
     return nonterminals, root
+}
+
+func Initialize(c Context) {
+    for _, node := range c["_nonterminals"].(map[string]INode) {
+        node.Initialize(c)
+    }
 }
 
 // Terminal rats
@@ -149,7 +156,7 @@ func ruleline(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
                     ropts = opts[0].(*RuleOptionsNT)
                 }
             }
-            return &RuleLineNT{r, ropts}
+            return &RuleLineNT{NonTerminal{Name: "RULELINE"}, r, ropts}
         }
         return nil
     }
@@ -193,7 +200,7 @@ func ruleOption(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
         if len(ns) > 0 {
             sval := ns[1].(*NonTerminal).Children[0].(*Terminal).Value
             if weight, err := strconv.Atoi(sval); err == nil {
-                return &RuleOptionsNT{weight}
+                return &RuleOptionsNT{weight, weight}
             } else {
                 panic(err.Error())
             }

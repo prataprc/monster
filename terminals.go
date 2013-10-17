@@ -12,6 +12,8 @@ func (t *Terminal) Show(prefix string) {
 func (t *Terminal) Repr(prefix string) string {
     return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v ", t.Name, t.Value)
 }
+func (n *Terminal) Initialize(c Context) {
+}
 func (t *Terminal) Generate(c Context) string {
     switch t.Name {
     case "STRING":

@@ -10,7 +10,6 @@ var _ = fmt.Sprintf("keep 'fmt' import during debugging");
 
 // INode interface for NonTerminal
 func (n *NonTerminal) Show(prefix string) {
-    fmt.Printf( "%v", n.Repr(prefix) )
     for _, n := range n.Children {
         n.(*NonTerminal).Show(prefix + "  ")
     }
@@ -18,10 +17,19 @@ func (n *NonTerminal) Show(prefix string) {
 func (n *NonTerminal) Repr( prefix string ) string {
     return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v \n", n.Name, n.Value)
 }
+func (n *NonTerminal) Initialize(c Context) {
+    for _, child := range n.Children {
+        if node, ok := child.(INode); ok {
+            node.Initialize(c)
+        } else {
+            panic("Does not implement INode interface")
+        }
+    }
+}
 func (n *NonTerminal) Generate(c Context) string {
     s := ""
-    for _, n := range n.Children {
-        s += n.(*NonTerminal).Generate(c)
+    for _, child := range n.Children {
+        s += child.(*NonTerminal).Generate(c)
     }
     return s
 }
@@ -49,9 +57,9 @@ func (n *RuleLinesNT) Generate(c Context) string {
     for _, nt := range n.Children {
         ruleline := nt.(*RuleLineNT)
         ruleopts := ruleline.ruleopts
-        if ruleopts != nil && ruleopts.weight > 0 {
-            accw += ruleopts.weight
-            ruleopts.weight -= 1
+        if ruleopts != nil && ruleopts.weightCount > 0 {
+            accw += ruleopts.weightCount
+            ruleopts.weightCount -= 1
         } else {
             accw += 10 // Default weightage
         }
@@ -68,8 +76,17 @@ func (n *RuleLinesNT) Generate(c Context) string {
 
 // rule-line non-terminal
 type RuleLineNT struct {
+    NonTerminal
     rule *RuleNT
     ruleopts *RuleOptionsNT
+}
+func (n *RuleLineNT) Initialize(c Context) {
+    if n.rule != nil {
+        n.rule.Initialize(c)
+    }
+    if n.ruleopts != nil {
+        n.ruleopts.Initialize(c)
+    }
 }
 func (n *RuleLineNT) Generate(c Context) string {
     return n.rule.Generate(c)
@@ -89,7 +106,7 @@ func (n *RuleNT) Generate(c Context) string {
             nonterm := m[term.Value].(*RuleLinesNT)
             s = nonterm.Generate(c)
             c[term.Value] = s
-            keys = append(keys, term.Name)
+            keys = append(keys, term.Value)
         } else {
             s = child.(INode).Generate(c)
         }
@@ -98,12 +115,16 @@ func (n *RuleNT) Generate(c Context) string {
     for _, key := range keys {
         delete(c, key)
     }
-    return strings.Join( outs, "" )
+    return strings.Join(outs, "")
 }
 
 // rule-options non-terminal
 type RuleOptionsNT struct {
     weight int
+    weightCount int
+}
+func (n *RuleOptionsNT) Initialize(c Context) {
+    n.weightCount = n.weight
 }
 
 // built-in function non-terminal
@@ -132,4 +153,3 @@ type ReferenceNT struct {
 func (n *ReferenceNT) Generate(c Context) string {
     return c[n.Value].(string)
 }
-

@@ -36,7 +36,7 @@ func main() {
         os.Exit(1)
     }
 
-    options.random = rand.New( rand.NewSource( int64(options.seed) ))
+    options.random = rand.New(rand.NewSource(int64(options.seed)))
     conf := make(golib.Config)
     start := monster.Parse(options.prodfile, conf)
 
