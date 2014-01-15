@@ -114,7 +114,7 @@ func bnlToken(matchval string, n string, v string) parsec.Parser {
 // nonterminal rats
 func Y(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			return &StartNT{NonTerminal{Name: "RULEBLOCKS", Children: ns}}
 		}
 		return nil
@@ -124,7 +124,7 @@ func Y(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 
 func ruleblock(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			idt := ns[0].(*parsec.Terminal)
 			idterm := Terminal{idt.Name, idt.Value, idt.Position}
 			cs := []parsec.ParsecNode{&idterm, ns[2]}
@@ -137,7 +137,7 @@ func ruleblock(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 
 func rulelines(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			return &RuleLinesNT{NonTerminal{Name: "RULELINES", Children: ns}}
 		}
 		return nil
@@ -149,7 +149,7 @@ func ruleline(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		var r *RuleNT
 		var ropts *RuleOptionsNT
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			r = ns[0].(*RuleNT)
 			if len(ns) > 1 {
 				opts := ns[1].([]parsec.ParsecNode)
@@ -166,7 +166,7 @@ func ruleline(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 
 func rule(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodifypart := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			if t, ok := ns[0].(*parsec.Terminal); ok {
 				return &Terminal{t.Name, t.Value, t.Position}
 			}
@@ -180,7 +180,7 @@ func rule(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	)
 
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			return &RuleNT{NonTerminal{Name: "RULE", Children: ns}}
 		}
 		return nil
@@ -190,7 +190,7 @@ func rule(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 
 func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			return &NonTerminal{Name: "RULEARGS", Children: ns}
 		}
 		return nil
@@ -198,7 +198,7 @@ func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	args := parsec.Many(nodifyargs, literal, comma)
 
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			sval := ns[1].(*NonTerminal).Children[0].(*Terminal).Value
 			if weight, err := strconv.Atoi(sval); err == nil {
 				return &RuleOptionsNT{weight, weight}
@@ -214,7 +214,7 @@ func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 
 func bnf(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			return ns[0]
 		}
 		return nil
@@ -223,7 +223,7 @@ func bnf(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	bargs := parsec.Kleene(nil, argparsers, comma)
 
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			return &BnfNT{
 				NonTerminal{Name: "BNF"},
 				ns[0].(*parsec.Terminal).Value, // CallName
@@ -237,7 +237,7 @@ func bnf(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 
 func reference(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
+		if ns != nil && len(ns) > 0 {
 			t := ns[1].(*parsec.Terminal)
 			return &ReferenceNT{NonTerminal{Name: "REFERENCE", Value: t.Value}}
 		}
