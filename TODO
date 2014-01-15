@@ -7,3 +7,7 @@
   should generate `some "rule"` exactly 3 times before applying the
   alternation grammar for `nonterminal`.
 
+- Remote the dependancy with golib.
+
+- Add test cases.
+

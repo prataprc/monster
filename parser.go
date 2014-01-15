@@ -3,7 +3,7 @@ package monster
 import (
 	"fmt"
 	"github.com/prataprc/golib"
-	"github.com/prataprc/golib/parsec"
+	"github.com/prataprc/goparsec"
 	"io/ioutil"
 	"strconv"
 )
@@ -40,7 +40,7 @@ var BnfCallbacks = make(map[string]func(Context, []interface{}) string)
 func Parse(prodfile string, conf golib.Config) INode {
 	bs, _ := ioutil.ReadFile(prodfile)
 	s := parsec.NewScanner(bs)
-	root, _ := Y(*s)
+	root, _ := Y(s)
 	return root.(INode)
 }
 
@@ -87,7 +87,7 @@ var fAlse = bnlToken("^FALSE", "FALSE", "false")
 var null = bnlToken("^NULL", "NULL", "null")
 
 // More terminal rats
-func literal(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func literal(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			t := ns[0].(*parsec.Terminal)
@@ -101,18 +101,18 @@ func literal(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 }
 
 func bnlToken(matchval string, n string, v string) parsec.Parser {
-	return func(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+	return func(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 		if term, news := parsec.Token(matchval, n)(s); term != nil {
 			t := term.(*parsec.Terminal)
 			term := Terminal{t.Name, v, t.Position}
 			return &BNLTerminal{term}, news
 		}
-		return nil, &s
+		return nil, s
 	}
 }
 
 // nonterminal rats
-func Y(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func Y(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			return &StartNT{NonTerminal{Name: "RULEBLOCKS", Children: ns}}
@@ -122,7 +122,7 @@ func Y(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.Many(nodify, ruleblock, parsec.NoEnd)(s)
 }
 
-func ruleblock(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func ruleblock(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			idt := ns[0].(*parsec.Terminal)
@@ -135,7 +135,7 @@ func ruleblock(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.And(nodify, ident, colon, rulelines, dot)(s)
 }
 
-func rulelines(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func rulelines(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			return &RuleLinesNT{NonTerminal{Name: "RULELINES", Children: ns}}
@@ -145,7 +145,7 @@ func rulelines(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.Many(nodify, ruleline, pipe)(s)
 }
 
-func ruleline(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func ruleline(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		var r *RuleNT
 		var ropts *RuleOptionsNT
@@ -164,7 +164,7 @@ func ruleline(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.And(nodify, rule, parsec.Maybe(nil, ruleOption))(s)
 }
 
-func rule(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func rule(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodifypart := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			if t, ok := ns[0].(*parsec.Terminal); ok {
@@ -188,7 +188,7 @@ func rule(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.Many(nodify, part)(s)
 }
 
-func ruleOption(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			return &NonTerminal{Name: "RULEARGS", Children: ns}
@@ -212,7 +212,7 @@ func ruleOption(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.And(nodify, opencurl, args, closecurl)(s)
 }
 
-func bnf(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func bnf(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			return ns[0]
@@ -235,7 +235,7 @@ func bnf(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
 	return parsec.And(nodify, ident, openparan, bargs, closeparan)(s)
 }
 
-func reference(s parsec.Scanner) (parsec.ParsecNode, *parsec.Scanner) {
+func reference(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if len(ns) > 0 {
 			t := ns[1].(*parsec.Terminal)

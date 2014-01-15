@@ -2,7 +2,7 @@ package monster
 
 import (
 	"fmt"
-	"github.com/prataprc/golib/goparsec"
+	"github.com/prataprc/goparsec"
 	"math/rand"
 	"strings"
 )
