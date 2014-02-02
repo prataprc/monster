@@ -60,7 +60,8 @@ var BnfCallbacks = make(map[string]func(Context, []interface{}) string)
 // Parse will read the contents of `prodfile` create an AST of generator nodes
 // and return root node.
 func Parse(prodfile string, conf map[string]interface{}) (INode, error) {
-	if bytes, err := ioutil.ReadFile(prodfile); err != nil {
+	bytes, err := ioutil.ReadFile(prodfile)
+	if err != nil {
 		return nil, err
 	}
 	return ParseText(bytes, conf)
@@ -243,7 +244,8 @@ func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if ns != nil && len(ns) > 0 {
 			sval := ns[1].(*NonTerminal).Children[0].(*Terminal).Value
-			if weight, err := strconv.Atoi(sval); err == nil {
+			weight, err := strconv.Atoi(sval)
+			if err == nil {
 				return &RuleOptionsNT{weight, weight}
 			}
 			panic(err.Error())
