@@ -2,7 +2,6 @@ package monster
 
 import (
 	"fmt"
-	"github.com/prataprc/golib"
 	"github.com/prataprc/goparsec"
 	"io/ioutil"
 	"strconv"
@@ -37,9 +36,16 @@ var EMPTY = Terminal{Name: "EMPTY", Value: ""}
 // Built-in functions
 var BnfCallbacks = make(map[string]func(Context, []interface{}) string)
 
-func Parse(prodfile string, conf golib.Config) INode {
-	bs, _ := ioutil.ReadFile(prodfile)
-	s := parsec.NewScanner(bs)
+func Parse(prodfile string, conf map[string]interface{}) (INode, error) {
+	if bytes, err := ioutil.ReadFile(prodfile); err != nil {
+		return nil, err
+	} else {
+		return ParseText(bytes, conf), nil
+	}
+}
+
+func ParseText(bytes []byte, conf map[string]interface{}) INode {
+	s := parsec.NewScanner(bytes)
 	root, _ := Y(s)
 	return root.(INode)
 }

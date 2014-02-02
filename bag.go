@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path"
 	"strconv"
 )
 
@@ -23,6 +24,13 @@ func bag(c Context, args []interface{}) string {
 		panic("Error: Atleast one argument expected in bag() BNF")
 	}
 	filename = filename[1 : len(filename)-1] // remove the double quotes
+	if filename[0] != os.PathSeparator {
+		var bagdir string
+		if v, ok := c["_bagdir"].(string); ok {
+			bagdir = v
+		}
+		filename = path.Join(bagdir, filename)
+	}
 	rnd := c["_random"].(*rand.Rand)
 	return rangeOnFile(rnd, filename, index)
 }
