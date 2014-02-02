@@ -5,15 +5,21 @@ import (
 	"strconv"
 )
 
-// INode interface for Terminal
+// Show implements INode interface
 func (t *Terminal) Show(prefix string) {
 	fmt.Println(t.Repr(prefix))
 }
+
+// Repr implements INode interface
 func (t *Terminal) Repr(prefix string) string {
 	return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v ", t.Name, t.Value)
 }
-func (n *Terminal) Initialize(c Context) {
+
+// Initialize implements INode interface
+func (t *Terminal) Initialize(c Context) {
 }
+
+// Generate implements INode interface
 func (t *Terminal) Generate(c Context) string {
 	switch t.Name {
 	case "STRING":
@@ -33,11 +39,12 @@ func (t *Terminal) Generate(c Context) string {
 	}
 }
 
-// Built-in terminal
+// BNLTerminal represents a built-in-literal token
 type BNLTerminal struct {
 	Terminal
 }
 
+// Generate implements INode interface
 func (t *BNLTerminal) Generate(c Context) string {
 	return t.Value
 }

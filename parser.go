@@ -25,7 +25,7 @@ type NonTerminal struct {
 	Children []parsec.ParsecNode
 }
 
-// All node types, terminal or nonterminal, must implement INode interface.
+// INode interface for terminals and nonterminals
 type INode interface { // AST functions
 	// Show displays the terminal structure and recursively calls nonterminal
 	// nodes. Show() on root node should be able to output syntax tree in
@@ -62,12 +62,11 @@ var BnfCallbacks = make(map[string]func(Context, []interface{}) string)
 func Parse(prodfile string, conf map[string]interface{}) (INode, error) {
 	if bytes, err := ioutil.ReadFile(prodfile); err != nil {
 		return nil, err
-	} else {
-		return ParseText(bytes, conf)
 	}
+	return ParseText(bytes, conf)
 }
 
-// Parse will parse `bytes` to create an AST of generator nodes and return
+// ParseText will parse `bytes` to create an AST of generator nodes and return
 // root node.
 func ParseText(bytes []byte, conf map[string]interface{}) (INode, error) {
 	var err error
@@ -246,9 +245,8 @@ func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 			sval := ns[1].(*NonTerminal).Children[0].(*Terminal).Value
 			if weight, err := strconv.Atoi(sval); err == nil {
 				return &RuleOptionsNT{weight, weight}
-			} else {
-				panic(err.Error())
 			}
+			panic(err.Error())
 		}
 		return nil
 

@@ -7,16 +7,19 @@ import (
 	"strings"
 )
 
+// Show implements INode interface
 func (n *NonTerminal) Show(prefix string) {
 	for _, child := range n.Children {
 		child.(INode).Show(prefix + "  ")
 	}
 }
 
+// Repr implements INode interface
 func (n *NonTerminal) Repr(prefix string) string {
 	return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v \n", n.Name, n.Value)
 }
 
+// Initialize implements INode interface
 func (n *NonTerminal) Initialize(c Context) {
 	for _, child := range n.Children {
 		if node, ok := child.(INode); ok {
@@ -27,6 +30,7 @@ func (n *NonTerminal) Initialize(c Context) {
 	}
 }
 
+// Generate implements INode interface
 func (n *NonTerminal) Generate(c Context) string {
 	s := ""
 	for _, child := range n.Children {
@@ -35,16 +39,18 @@ func (n *NonTerminal) Generate(c Context) string {
 	return s
 }
 
-// Start
+// StartNT represents the root node.
 type StartNT struct {
 	NonTerminal
 }
 
-// rule-block non terminal
+// RuleBlockNT represents a rule block defining a set of one or more rulelines
+// for a non-terminal
 type RuleBlockNT struct {
 	NonTerminal
 }
 
+// Show implements INode interface
 func (n *RuleBlockNT) Show(prefix string) {
 	n.Children[0].(INode).Show(prefix)
 	for _, child := range n.Children[1:] {
@@ -52,11 +58,12 @@ func (n *RuleBlockNT) Show(prefix string) {
 	}
 }
 
-// rule-lines non-terminal
+// RuleLinesNT represents a set of one or more rulelines
 type RuleLinesNT struct {
 	NonTerminal
 }
 
+// Show implements INode interface
 func (n *RuleLinesNT) Show(prefix string) {
 	for i := 0; i < len(n.Children); i++ {
 		child := n.Children[i]
@@ -67,6 +74,7 @@ func (n *RuleLinesNT) Show(prefix string) {
 	}
 }
 
+// Generate implements INode interface
 func (n *RuleLinesNT) Generate(c Context) string {
 	var index = make(map[int]*RuleLineNT)
 	accw := 0
@@ -75,7 +83,7 @@ func (n *RuleLinesNT) Generate(c Context) string {
 		ruleopts := ruleline.ruleopts
 		if ruleopts != nil && ruleopts.weightCount > 0 {
 			accw += ruleopts.weightCount
-			ruleopts.weightCount -= 1
+			ruleopts.weightCount--
 		} else {
 			accw += 10 // Default weightage
 		}
@@ -90,17 +98,20 @@ func (n *RuleLinesNT) Generate(c Context) string {
 	return n.Children[r].(*RuleLineNT).Generate(c)
 }
 
-// rule-line non-terminal
+// RuleLineNT represents a collection of rule definition that forms rule-line
+// for a non-terminal. Also contains rule-options.
 type RuleLineNT struct {
 	NonTerminal
 	rule     *RuleNT
 	ruleopts *RuleOptionsNT
 }
 
+// Show implements INode interface
 func (n *RuleLineNT) Show(prefix string) {
 	n.rule.Show(prefix + "  ")
 }
 
+// Initialize implements INode interface
 func (n *RuleLineNT) Initialize(c Context) {
 	if n.rule != nil {
 		n.rule.Initialize(c)
@@ -109,15 +120,18 @@ func (n *RuleLineNT) Initialize(c Context) {
 		n.ruleopts.Initialize(c)
 	}
 }
+
+// Generate implements INode interface
 func (n *RuleLineNT) Generate(c Context) string {
 	return n.rule.Generate(c)
 }
 
-// rule non-terminal
+// RuleNT represents an individual rule definition in a rule-line
 type RuleNT struct {
 	NonTerminal
 }
 
+// Generate implements INode interface
 func (n *RuleNT) Generate(c Context) string {
 	var s string
 	keys := make([]string, 0, len(n.Children))
@@ -140,23 +154,26 @@ func (n *RuleNT) Generate(c Context) string {
 	return strings.Join(outs, "")
 }
 
-// rule-options non-terminal
+// RuleOptionsNT represents a rule option that defines the weight of a
+// rule-line
 type RuleOptionsNT struct {
 	weight      int
 	weightCount int
 }
 
+// Initialize implements INode interface
 func (n *RuleOptionsNT) Initialize(c Context) {
 	n.weightCount = n.weight
 }
 
-// built-in function non-terminal
+// BnfNT represents a built-in function reference in rule.
 type BnfNT struct {
 	NonTerminal
 	callName string
 	args     []parsec.ParsecNode
 }
 
+// Generate implements INode interface
 func (n *BnfNT) Generate(c Context) string {
 	args := make([]interface{}, 0)
 	for _, arg := range n.args {
@@ -170,11 +187,12 @@ func (n *BnfNT) Generate(c Context) string {
 	return BnfCallbacks[n.callName](c, args)
 }
 
-// Reference non-terminal
+// ReferenceNT represents a variable reference from context.
 type ReferenceNT struct {
 	NonTerminal
 }
 
+// Generate implements INode interface
 func (n *ReferenceNT) Generate(c Context) string {
 	return c[n.Value].(string)
 }

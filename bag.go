@@ -49,7 +49,7 @@ func rangeOnFile(rnd *rand.Rand, filename string, index int) string {
 func readBag(filename string) [][]string {
 	fd, err := os.Open(filename)
 	if err != nil {
-		panic(fmt.Errorf("Cannot open file %v\n", filename))
+		panic(fmt.Errorf("cannot open file %v\n", filename))
 	}
 	records, _ := csv.NewReader(fd).ReadAll()
 	return records

@@ -7,7 +7,7 @@ import (
 )
 
 func bnfrangef(c Context, args []interface{}) string {
-	var min float64 = 0.0
+	var min float64
 	var max float64
 	rnd := c["_random"].(*rand.Rand)
 	if len(args) == 2 {

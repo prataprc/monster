@@ -7,7 +7,7 @@ import (
 )
 
 func bnfrange(c Context, args []interface{}) string {
-	var min int = 0
+	var min int
 	var max int
 	rnd := c["_random"].(*rand.Rand)
 	if len(args) == 2 {
