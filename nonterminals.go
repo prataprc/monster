@@ -9,7 +9,6 @@ import (
 
 var _ = fmt.Sprintf("keep 'fmt' import during debugging")
 
-// INode interface for NonTerminal
 func (n *NonTerminal) Show(prefix string) {
 	for _, n := range n.Children {
 		n.(*NonTerminal).Show(prefix + "  ")

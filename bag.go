@@ -9,7 +9,8 @@ import (
 	"strconv"
 )
 
-var Bagfiles = make(map[string][][]string) // A cache of bag files.
+// Bagfiles stores a cache of bag entries to avoid loading bag files.
+var Bagfiles = make(map[string][][]string)
 
 func bag(c Context, args []interface{}) string {
 	var filename string

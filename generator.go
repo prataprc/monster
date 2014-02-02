@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// Generate and return an array of text, of `count` length, from `prodfile`.
+// `seed` will be used for randomization
+// `bagdir` will specify the directory to look for bag-files.
 func Generate(seed, count int, bagdir, prodfile string) ([]string, error) {
 	if prodfile == "" {
 		return nil, fmt.Errorf("invalid prodfile")
