@@ -2,7 +2,6 @@ package monster
 
 import (
 	"encoding/csv"
-	"fmt"
 	"math/rand"
 	"os"
 	"path"
@@ -49,8 +48,7 @@ func rangeOnFile(rnd *rand.Rand, filename string, index int) string {
 func readBag(filename string) [][]string {
 	fd, err := os.Open(filename)
 	if err != nil {
-		fmt.Printf("Cannot open file %v\n", filename)
-		os.Exit(1)
+		panic("Cannot open file %v\n", filename)
 	}
 	records, _ := csv.NewReader(fd).ReadAll()
 	return records

@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-var _ = fmt.Sprintf("keep 'fmt' import during debugging")
-
 func (n *NonTerminal) Show(prefix string) {
 	for _, n := range n.Children {
 		n.(*NonTerminal).Show(prefix + "  ")

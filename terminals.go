@@ -23,7 +23,6 @@ func (t *Terminal) Generate(c Context) string {
 		return fmt.Sprintf("%v", val)
 	case "FLOAT":
 		val, _ := strconv.ParseFloat(t.Value, 64)
-		fmt.Println(val, t.Value)
 		return fmt.Sprintf("%v", val)
 	case "CHAR":
 		return t.Value[1 : len(t.Value)-1]

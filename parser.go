@@ -1,13 +1,10 @@
 package monster
 
 import (
-	"fmt"
 	"github.com/prataprc/goparsec"
 	"io/ioutil"
 	"strconv"
 )
-
-var _ = fmt.Sprintf("keep 'fmt' import during debugging") // FIXME
 
 type Terminal struct {
 	Name     string // typically contains terminal's token type
@@ -56,7 +53,6 @@ func Build(start INode) (map[string]INode, INode) {
 	root := startnt.Children[0].(INode)
 	for _, nt := range startnt.Children {
 		rb, _ := nt.(*RuleBlockNT)
-		// fmt.Println( reflect.TypeOf(rb.Children[0]) )
 		term := rb.Children[0].(*Terminal)
 		nonterminals[term.Value] = rb.Children[1].(INode)
 	}
