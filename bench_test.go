@@ -11,7 +11,10 @@ integer : range(-10000, 10000000).
 
 func BenchmarkInteger(b *testing.B) {
 	conf := make(map[string]interface{})
-	start := ParseText([]byte(intProd), conf)
+	start, err := ParseText([]byte(intProd), conf)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	nonterminals, root := Build(start)
 	c := map[string]interface{}{
@@ -56,7 +59,10 @@ char    : "a"
 
 func BenchmarkChar(b *testing.B) {
 	conf := make(map[string]interface{})
-	start := ParseText([]byte(charProd), conf)
+	start, err := ParseText([]byte(charProd), conf)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	nonterminals, root := Build(start)
 	c := map[string]interface{}{
@@ -79,7 +85,10 @@ string  : char
 
 func BenchmarkString(b *testing.B) {
 	conf := make(map[string]interface{})
-	start := ParseText([]byte(strProd), conf)
+	start, err := ParseText([]byte(strProd), conf)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	nonterminals, root := Build(start)
 	c := map[string]interface{}{
@@ -99,7 +108,10 @@ float : rangef(-1000.0, 1000.0).
 
 func BenchmarkFloat(b *testing.B) {
 	conf := make(map[string]interface{})
-	start := ParseText([]byte(floatProd), conf)
+	start, err := ParseText([]byte(floatProd), conf)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	nonterminals, root := Build(start)
 	c := map[string]interface{}{

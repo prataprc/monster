@@ -34,7 +34,7 @@ func (n *NonTerminal) Initialize(c Context) {
 func (n *NonTerminal) Generate(c Context) string {
 	s := ""
 	for _, child := range n.Children {
-		s += child.(*NonTerminal).Generate(c)
+		s += child.(INode).Generate(c)
 	}
 	return s
 }
