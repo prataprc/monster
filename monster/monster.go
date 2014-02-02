@@ -60,9 +60,9 @@ func main() {
 	} else {
 		nonterminals, root := monster.Build(start)
 		c := map[string]interface{}{
+			"_nonterminals": nonterminals,
 			"_random":       options.random,
 			"_bagdir":       options.bagdir,
-			"_nonterminals": nonterminals,
 		}
 		fd, err := os.Create(options.outfile)
 		if err != nil {

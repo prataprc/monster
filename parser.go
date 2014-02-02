@@ -1,52 +1,92 @@
+// Parser uses `parsec` tool to parse production grammar and construct an AST,
+// abstract syntax tree.
+
 package monster
 
 import (
+	"fmt"
 	"github.com/prataprc/goparsec"
 	"io/ioutil"
+	"runtime/debug"
 	"strconv"
 )
 
+// Terminal structure for terminal-node in AST.
 type Terminal struct {
 	Name     string // typically contains terminal's token type
 	Value    string // value of the terminal
 	Position int
 }
 
+// NonTerminal structure for nonterminal-node in AST.
 type NonTerminal struct {
 	Name     string // typically contains terminal's token type
 	Value    string // value of the terminal
 	Children []parsec.ParsecNode
 }
 
+// All node types, terminal or nonterminal, must implement INode interface.
 type INode interface { // AST functions
+	// Show displays the terminal structure and recursively calls nonterminal
+	// nodes. Show() on root node should be able to output syntax tree in
+	// stdout.
 	Show(string)
+
+	// Repr is used by Show to render terminal structure.
 	Repr(prefix string) string
+
+	// Initialize should be called before calling Generate on the root node.
 	Initialize(c Context)
+
+	// Generate is typically called on the root node, which then recursively
+	// calls Generate on the children nodes to generate text from production
+	// grammaer.
 	Generate(c Context) string
 }
 
+// Context dictionary to used by production nodes. Following keys are
+// pre-created,
+//  _nonterminals, list of nonterminal rules gathered from AST.
+//  _random,       reference to *rand.Rand.
+//  _bagdir,       directory to look for bag-files.
 type Context map[string]interface{}
 
+// Empty temrinal node.
 var EMPTY = Terminal{Name: "EMPTY", Value: ""}
 
-//---- Global variables
-// Built-in functions
+// Dictionary of built-in functions
 var BnfCallbacks = make(map[string]func(Context, []interface{}) string)
 
+// Parse will read the contents of `prodfile` create an AST of generator nodes
+// and return root node.
 func Parse(prodfile string, conf map[string]interface{}) (INode, error) {
 	if bytes, err := ioutil.ReadFile(prodfile); err != nil {
 		return nil, err
 	} else {
-		return ParseText(bytes, conf), nil
+		return ParseText(bytes, conf)
 	}
 }
 
-func ParseText(bytes []byte, conf map[string]interface{}) INode {
+// Parse will parse `bytes` to create an AST of generator nodes and return
+// root node.
+func ParseText(bytes []byte, conf map[string]interface{}) (INode, error) {
+	var err error
+
+	defer func() {
+		if r := recover(); r != nil {
+			if x, ok := conf["debug"].(bool); ok && x == true {
+				err = fmt.Errorf(string(debug.Stack()))
+			}
+		}
+	}()
 	s := parsec.NewScanner(bytes)
-	root, _ := Y(s)
-	return root.(INode)
+	root, _ := y(s)
+	return root.(INode), err
 }
 
+// Build will compile AST to list of non-terminal rule-sets. It will return
+// the list of non-terminals back to the caller and the root node of the ast.
+// Applications should always call Build() before doing Generate()
 func Build(start INode) (map[string]INode, INode) {
 	nonterminals := make(map[string]INode)
 	startnt := start.(*StartNT)
@@ -59,6 +99,8 @@ func Build(start INode) (map[string]INode, INode) {
 	return nonterminals, root
 }
 
+// Initialize will initialize/re-initialize the AST for next round of
+// generation.
 func Initialize(c Context) {
 	for _, node := range c["_nonterminals"].(map[string]INode) {
 		node.Initialize(c)
@@ -114,7 +156,7 @@ func bnlToken(matchval string, n string, v string) parsec.Parser {
 }
 
 // nonterminal rats
-func Y(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
+func y(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
 	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
 		if ns != nil && len(ns) > 0 {
 			return &StartNT{NonTerminal{Name: "RULEBLOCKS", Children: ns}}

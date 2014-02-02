@@ -8,13 +8,15 @@ import (
 )
 
 func (n *NonTerminal) Show(prefix string) {
-	for _, n := range n.Children {
-		n.(*NonTerminal).Show(prefix + "  ")
+	for _, child := range n.Children {
+		child.(INode).Show(prefix + "  ")
 	}
 }
+
 func (n *NonTerminal) Repr(prefix string) string {
 	return fmt.Sprintf(prefix) + fmt.Sprintf("%v : %v \n", n.Name, n.Value)
 }
+
 func (n *NonTerminal) Initialize(c Context) {
 	for _, child := range n.Children {
 		if node, ok := child.(INode); ok {
@@ -24,6 +26,7 @@ func (n *NonTerminal) Initialize(c Context) {
 		}
 	}
 }
+
 func (n *NonTerminal) Generate(c Context) string {
 	s := ""
 	for _, child := range n.Children {
@@ -42,13 +45,26 @@ type RuleBlockNT struct {
 	NonTerminal
 }
 
-func (n *RuleBlockNT) Generate(c Context) string {
-	return n.Children[1].(*RuleLinesNT).Generate(c)
+func (n *RuleBlockNT) Show(prefix string) {
+	n.Children[0].(INode).Show(prefix)
+	for _, child := range n.Children[1:] {
+		child.(INode).Show(prefix + "  ")
+	}
 }
 
 // rule-lines non-terminal
 type RuleLinesNT struct {
 	NonTerminal
+}
+
+func (n *RuleLinesNT) Show(prefix string) {
+	for i := 0; i < len(n.Children); i++ {
+		child := n.Children[i]
+		child.(INode).Show(prefix + "  ")
+		if i < len(n.Children)-1 {
+			fmt.Println(prefix + "|")
+		}
+	}
 }
 
 func (n *RuleLinesNT) Generate(c Context) string {
@@ -79,6 +95,10 @@ type RuleLineNT struct {
 	NonTerminal
 	rule     *RuleNT
 	ruleopts *RuleOptionsNT
+}
+
+func (n *RuleLineNT) Show(prefix string) {
+	n.rule.Show(prefix + "  ")
 }
 
 func (n *RuleLineNT) Initialize(c Context) {
