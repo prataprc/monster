@@ -16,6 +16,7 @@ import (
 	"os"
 	"time"
 )
+
 import "github.com/prataprc/monster"
 
 var options struct {
@@ -64,6 +65,16 @@ func main() {
 		panic(err)
 	}
 
+	var fd *os.File
+	if options.outfile == "-" {
+		fd = os.Stdout
+	} else if options.outfile != "" {
+		fd, err = os.Create(options.outfile)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	if options.ast {
 		start.Show("")
 	} else {
@@ -72,18 +83,13 @@ func main() {
 			"_nonterminals": nonterminals,
 			"_random":       options.random,
 			"_bagdir":       options.bagdir,
-		}
-		fd, err := os.Create(options.outfile)
-		if err != nil {
-			panic(err)
+			"_prodfile":     options.prodfile,
 		}
 		for i := 0; i < options.count; i++ {
 			monster.Initialize(c)
 			outtext := root.Generate(c) + "\n"
 			if _, err := fd.Write([]byte(outtext)); err != nil {
 				panic(err)
-			} else {
-				fmt.Println(outtext)
 			}
 		}
 	}

@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 )
 
@@ -24,6 +24,7 @@ var Bagfiles = make(map[string][][]string)
 func bag(c Context, args []interface{}) string {
 	var filename string
 	var index int
+	var err error
 
 	if len(args) == 2 {
 		filename = args[0].(string)
@@ -34,12 +35,16 @@ func bag(c Context, args []interface{}) string {
 		panic("Error: Atleast one argument expected in bag() BNF")
 	}
 	filename = filename[1 : len(filename)-1] // remove the double quotes
-	if filename[0] != os.PathSeparator {
-		var bagdir string
-		if v, ok := c["_bagdir"].(string); ok {
-			bagdir = v
+	if !filepath.IsAbs(filename) {
+		if bagdir, ok := c["_bagdir"].(string); ok {
+			filename = filepath.Join(bagdir, filename)
+		} else if prodfile, ok := c["_prodfile"]; ok {
+			dirpath := filepath.Dir(prodfile.(string))
+			filename = filepath.Join(dirpath, filename)
 		}
-		filename = path.Join(bagdir, filename)
+	}
+	if filename, err = filepath.Abs(filename); err != nil {
+		panic("Error: bad filepath")
 	}
 	rnd := c["_random"].(*rand.Rand)
 	return rangeOnFile(rnd, filename, index)

@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"github.com/prataprc/goparsec"
 	"io/ioutil"
+	"path/filepath"
 	"runtime/debug"
 	"strconv"
 )
@@ -58,6 +59,7 @@ type INode interface { // AST functions
 //  _nonterminals, list of nonterminal rules gathered from AST.
 //  _random,       reference to *rand.Rand.
 //  _bagdir,       directory to look for bag-files.
+//  _prodfile,     name of the production file.
 type Context map[string]interface{}
 
 // Empty temrinal node.
@@ -113,6 +115,13 @@ func Build(start INode) (map[string]INode, INode) {
 func Initialize(c Context) {
 	for _, node := range c["_nonterminals"].(map[string]INode) {
 		node.Initialize(c)
+	}
+	if prodfile, ok := c["_prodfile"]; ok {
+		if filename, err := filepath.Abs(prodfile.(string)); err != nil {
+			panic("Error: bad filepath")
+		} else {
+			c["_prodfile"] = filename
+		}
 	}
 }
 

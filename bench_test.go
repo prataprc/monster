@@ -30,11 +30,15 @@ func BenchmarkInteger(b *testing.B) {
 		"_random":       rand.New(rand.NewSource(int64(10))),
 		"_nonterminals": nonterminals,
 	}
+	Initialize(c)
 
 	b.ResetTimer()
+	count := 0
 	for i := 0; i < b.N; i++ {
-		root.Generate(c)
+		s := root.Generate(c)
+		count += len(s)
 	}
+	b.SetBytes(int64(count / b.N))
 }
 
 var charProd = `
@@ -78,11 +82,15 @@ func BenchmarkChar(b *testing.B) {
 		"_random":       rand.New(rand.NewSource(int64(10))),
 		"_nonterminals": nonterminals,
 	}
+	Initialize(c)
 
 	b.ResetTimer()
+	count := 0
 	for i := 0; i < b.N; i++ {
-		root.Generate(c)
+		s := root.Generate(c)
+		count += len(s)
 	}
+	b.SetBytes(int64(count / b.N))
 }
 
 var strProd = `
@@ -104,11 +112,15 @@ func BenchmarkString(b *testing.B) {
 		"_random":       rand.New(rand.NewSource(int64(10))),
 		"_nonterminals": nonterminals,
 	}
+	Initialize(c)
 
 	b.ResetTimer()
+	count := 0
 	for i := 0; i < b.N; i++ {
-		root.Generate(c)
+		s := root.Generate(c)
+		count += len(s)
 	}
+	b.SetBytes(int64(count / b.N))
 }
 
 var floatProd = `
@@ -127,9 +139,34 @@ func BenchmarkFloat(b *testing.B) {
 		"_random":       rand.New(rand.NewSource(int64(10))),
 		"_nonterminals": nonterminals,
 	}
+	Initialize(c)
 
 	b.ResetTimer()
+	count := 0
 	for i := 0; i < b.N; i++ {
-		root.Generate(c)
+		s := root.Generate(c)
+		count += len(s)
 	}
+	b.SetBytes(int64(count / b.N))
+}
+
+func BenchmarkJSON(b *testing.B) {
+	conf := make(map[string]interface{})
+	start, _ := Parse("./prods/json.prod", conf)
+
+	nonterminals, root := Build(start)
+	c := map[string]interface{}{
+		"_random":       rand.New(rand.NewSource(int64(10))),
+		"_nonterminals": nonterminals,
+		"_prodfile":     "./prods/json.prod",
+	}
+	Initialize(c)
+
+	b.ResetTimer()
+	count := 0
+	for i := 0; i < b.N; i++ {
+		s := root.Generate(c)
+		count += len(s)
+	}
+	b.SetBytes(int64(count / b.N))
 }
