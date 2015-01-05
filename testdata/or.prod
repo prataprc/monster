@@ -1,0 +1,5 @@
+(let g 10)
+
+s : (let l 20) $g $l
+  | " hello ".
+

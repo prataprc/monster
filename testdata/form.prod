@@ -1,0 +1,3 @@
+(let g 10)
+
+s : DQ $g DQ.

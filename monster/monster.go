@@ -1,98 +1,100 @@
 //  Copyright (c) 2013 Couchbase, Inc.
-//  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain a
-//  copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//  License for the specific language governing permissions and limitations
-//  under the License.
 
 package main
 
-import (
-	"flag"
-	"fmt"
-	"math/rand"
-	"os"
-	"time"
-)
+import "flag"
+import "fmt"
+import "log"
+import "os"
+import "time"
+import "io/ioutil"
 
+import "github.com/prataprc/goparsec"
 import "github.com/prataprc/monster"
+import "github.com/prataprc/monster/common"
 
 var options struct {
-	ast      bool
-	prodfile string
-	bagdir   string
-	outfile  string
-	seed     int
-	random   *rand.Rand
-	count    int
-	help     bool
+    bagdir  string
+    outfile string
+    seed    int
+    count   int
+    help    bool
+    debug   bool
 }
 
-func argParse() {
-	seed := time.Now().UTC().Second()
-	flag.BoolVar(&options.ast, "ast", false,
-		"show the ast of production")
-	flag.StringVar(&options.bagdir, "bagdir", "",
-		"directory path containing bags")
-	flag.IntVar(&options.seed, "s", seed,
-		"seed value")
-	flag.IntVar(&options.count, "n", 1,
-		"generate n combinations")
-	flag.StringVar(&options.outfile, "o", "-",
-		"specify an output file")
-	flag.Parse()
+func argParse() (string, *os.File) {
+    seed := time.Now().UTC().Second()
+    flag.StringVar(&options.bagdir, "bagdir", "",
+        "directory path containing bags")
+    flag.IntVar(&options.seed, "seed", seed,
+        "seed value")
+    flag.IntVar(&options.count, "n", 1,
+        "generate n combinations")
+    flag.StringVar(&options.outfile, "o", "-",
+        "specify an output file")
+    flag.Parse()
+
+    prodfile := flag.Args()[0]
+    if prodfile == "" || options.help {
+        usage()
+        os.Exit(1)
+    }
+
+    var err error
+    outfd := os.Stdout
+    if options.outfile != "-" && options.outfile != "" {
+        outfd, err = os.Create(options.outfile)
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
+    return prodfile, outfd
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage : %s [OPTIONS] <production-file> \n", os.Args[0])
-	flag.PrintDefaults()
+    fmt.Fprintf(os.Stderr, "Usage : %s [OPTIONS] <production-file> \n", os.Args[0])
+    flag.PrintDefaults()
 }
 
 func main() {
-	argParse()
-	options.prodfile = flag.Args()[0]
-	if options.prodfile == "" || options.help {
-		usage()
-		os.Exit(1)
-	}
+    prodfile, outfd := argParse()
 
-	options.random = rand.New(rand.NewSource(int64(options.seed)))
-	conf := make(map[string]interface{})
-	start, err := monster.Parse(options.prodfile, conf)
-	if err != nil {
-		panic(err)
-	}
+    // read production-file
+    text, err := ioutil.ReadFile(prodfile)
+    if err != nil {
+        log.Fatal(err)
+    }
+    // compile
+    root := compile(parsec.NewScanner(text))
+    scope := root.(common.Scope)
+    nterms := scope["_nonterminals"].(common.NTForms)
+    scope = monster.BuildContext(scope, uint64(options.seed), options.bagdir)
+    scope["_prodfile"] = prodfile
+    // evaluate
+    for i := 0; i < options.count; i++ {
+        val := evaluate("root", scope, nterms["s"])
+        outtext := fmt.Sprintf("%v\n", val)
+        if _, err := outfd.Write([]byte(outtext)); err != nil {
+            log.Fatal(err)
+        }
+    }
+}
 
-	var fd *os.File
-	if options.outfile == "-" {
-		fd = os.Stdout
-	} else if options.outfile != "" {
-		fd, err = os.Create(options.outfile)
-		if err != nil {
-			panic(err)
-		}
-	}
+func compile(s parsec.Scanner) parsec.ParsecNode {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Printf("%v at %v", r, s.GetCursor())
+        }
+    }()
+    root, _ := monster.Y(s)
+    return root
+}
 
-	if options.ast {
-		start.Show("")
-	} else {
-		nonterminals, root := monster.Build(start)
-		c := map[string]interface{}{
-			"_nonterminals": nonterminals,
-			"_random":       options.random,
-			"_bagdir":       options.bagdir,
-			"_prodfile":     options.prodfile,
-		}
-		for i := 0; i < options.count; i++ {
-			monster.Initialize(c)
-			outtext := root.Generate(c) + "\n"
-			if _, err := fd.Write([]byte(outtext)); err != nil {
-				panic(err)
-			}
-		}
-	}
+func evaluate(name string, scope common.Scope, forms []*common.Form) interface{} {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Printf("%v", r)
+        }
+    }()
+    return monster.EvalForms(name, scope, forms)
 }

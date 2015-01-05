@@ -1,17 +1,53 @@
-json : "{ " properties "}".
+(let guid (uuid))
 
-properties  : DQ "type" DQ ": " DQ "user" DQ ", " NL
+s : "{ " properties "}".
+
+properties  : type ", " NL
+              docid ", " NL
+              age ", " NL
+              eyecolor ", " NL
+              active ", " NL
+              balance ", " NL
+              company ", " NL
               DQ "first-name" DQ ": " DQ fname DQ ", " NL
-              lastname
-              age
-              emailid
-              city
-              gender.
+              lastname ", " NL
+              emailid ", " NL
+              picture ", " NL
+              gender ", " NL
+              phone ", " NL
+              address ", " NL
+              registered ", " NL
+              friends ", " NL.
 
-fname       : bag("./propernames").
-lastname    : DQ "last-name"  DQ ": " DQ bag("./propernames") DQ ", " NL.
-age         : DQ "age"        DQ ": " range(15, 80)                     ", " NL.
-emailid     : DQ "emailid"    DQ ": " DQ $fname "@gmail.com"     DQ ", " NL.
-city        : DQ "city"       DQ ": " DQ bag("./cities") DQ ", " NL.
-gender      : DQ "gender"     DQ ": " DQ "male" DQ NL
-            | DQ "gender"     DQ ": " DQ "female" DQ NL.
+type       : DQ "type"  DQ ": " DQ "user"  DQ.
+docid      : DQ "docid" DQ ": " DQ (sprintf "User-%v" $guid) DQ.
+age        : DQ "age" DQ ": " (range 15 80).
+eyecolor   : DQ "eyeColor" DQ ": " DQ (choice "brown" "blue" "green") DQ.
+active     : DQ "isActive" DQ ": " (choice "true" "false").
+balance    : DQ "balance" DQ ": " DQ (sprintf "$%.2f" (rangef 100000)) DQ.
+company    : DQ "company" DQ ": " DQ (bag "./companies") DQ.
+fname      : (bag "./propernames").
+lastname   : DQ "last-name"  DQ ": " DQ (bag "./propernames") DQ.
+emailid    : DQ "emailid" DQ ": " DQ $fname "@gmail.com" DQ.
+picture    : DQ "picture"  DQ ": " pictureurl.
+  pictureurl : DQ (sprintf "http://placehold.it/%s" $fname) DQ.
+gender     : DQ "gender" DQ ": " DQ (choice "male" "female") DQ.
+phone      : DQ "phone" DQ ": " DQ phonenum DQ.
+  phonenum : (sprintf "+%2d (%3d) %3d-%d4"
+                (range 1 99) (range 1 999) (range 1 999) (range 1 9999)).
+address    : DQ "address" DQ ": " "{ " number street city state pin " }".
+  number   : DQ "number" DQ ": " (range 1 1000) ", ".
+  street   : DQ "street" DQ ": " DQ "President Street" DQ ",".
+  city     : DQ "city"   DQ ": " DQ (bag ./cities) DQ ", ".
+  state    : DQ "state"  DQ ": " DQ "Marshall Islands" DQ ", ".
+  pin      : DQ "pin"    DQ ": " (range 0 999999).
+
+registered : DQ "registered" DQ ": " DQ regtime DQ.
+  regtime  : (ranget "2006-01-02T15:04:05Z" "2009-01-02T15:04:05Z").
+
+friends    : (let friendcount 0) DQ "friends" DQ ": " "[ " fewfriends " ]".
+fewfriends : (weigh 0.1) frienddoc
+           | (weigh 0.8 0.3) frienddoc ", " NL (inc friendcount) fewfriends.
+frienddoc  : "{ " id  frname " }".
+  id       : DQ "id" DQ ": " $friendcount ", ".
+  frname     : DQ "name" DQ ": " DQ (bag "./propernames") DQ.

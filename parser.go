@@ -1,311 +1,328 @@
 //  Copyright (c) 2013 Couchbase, Inc.
-//  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain a
-//  copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//  License for the specific language governing permissions and limitations
-//  under the License.
 
-// Parser uses `parsec` tool to parse production grammar and construct an AST,
-// abstract syntax tree.
+// Parser uses `parsec` tool to parse production grammar and
+// construct generator tree.
 
 package monster
 
-import (
-	"fmt"
-	"github.com/prataprc/goparsec"
-	"io/ioutil"
-	"path/filepath"
-	"runtime/debug"
-	"strconv"
-)
+import "fmt"
+import "log"
+import "time"
+import "math/rand"
 
-// Terminal structure for terminal-node in AST.
-type Terminal struct {
-	Name     string // typically contains terminal's token type
-	Value    string // value of the terminal
-	Position int
-}
+import "github.com/prataprc/goparsec"
+import "github.com/prataprc/monster/builtin"
+import "github.com/prataprc/monster/common"
 
-// NonTerminal structure for nonterminal-node in AST.
-type NonTerminal struct {
-	Name     string // typically contains terminal's token type
-	Value    string // value of the terminal
-	Children []parsec.ParsecNode
-}
+//----------------
+// Monster grammar
+//----------------
 
-// INode interface for terminals and nonterminals
-type INode interface { // AST functions
-	// Show displays the terminal structure and recursively calls nonterminal
-	// nodes. Show() on root node should be able to output syntax tree in
-	// stdout.
-	Show(string)
+// bnf        -> forms nterminal*
+// nterminal  -> ident ":" rules "."
+// rules      -> ruletok+
+//            -> rules "|" ruletok+
+// ruletok    -> ident
+//            |  ref
+//            |  terminal
+//            |  string
+//            |  form
+//
+// forms      -> form*
+// form       -> "(" formarg+ ")"
 
-	// Repr is used by Show to render terminal structure.
-	Repr(prefix string) string
+// ident      -> `[a-z0-9]+`
+// terminal   -> `[A-Z][A-Z0-9]*`
+// formarg    -> `[^ \t\r\n\(\)]+`
+//            |  form
+// ws         -> `[ \t\r\n]+`
 
-	// Initialize should be called before calling Generate on the root node.
-	Initialize(c Context)
+type Nt [2]interface{}
 
-	// Generate is typically called on the root node, which then recursively
-	// calls Generate on the children nodes to generate text from production
-	// grammaer.
-	Generate(c Context) string
-}
+var EvalForms = common.EvalForms
 
-// Context dictionary to used by production nodes. Following keys are
-// pre-created,
-//  _nonterminals, list of nonterminal rules gathered from AST.
-//  _random,       reference to *rand.Rand.
-//  _bagdir,       directory to look for bag-files.
-//  _prodfile,     name of the production file.
-type Context map[string]interface{}
-
-// Empty temrinal node.
-var EMPTY = Terminal{Name: "EMPTY", Value: ""}
-
-// Dictionary of built-in functions
-var BnfCallbacks = make(map[string]func(Context, []interface{}) string)
-
-// Parse will read the contents of `prodfile` create an AST of generator nodes
-// and return root node.
-func Parse(prodfile string, conf map[string]interface{}) (INode, error) {
-	bytes, err := ioutil.ReadFile(prodfile)
-	if err != nil {
-		return nil, err
-	}
-	return ParseText(bytes, conf)
-}
-
-// ParseText will parse `bytes` to create an AST of generator nodes and return
-// root node.
-func ParseText(bytes []byte, conf map[string]interface{}) (INode, error) {
-	var err error
-
-	defer func() {
-		if r := recover(); r != nil {
-			if x, ok := conf["debug"].(bool); ok && x == true {
-				err = fmt.Errorf(string(debug.Stack()))
-			}
-		}
-	}()
-	s := parsec.NewScanner(bytes)
-	root, _ := y(s)
-	return root.(INode), err
-}
-
-// Build will compile AST to list of non-terminal rule-sets. It will return
-// the list of non-terminals back to the caller and the root node of the ast.
-// Applications should always call Build() before doing Generate()
-func Build(start INode) (map[string]INode, INode) {
-	nonterminals := make(map[string]INode)
-	startnt := start.(*StartNT)
-	root := startnt.Children[0].(INode)
-	for _, nt := range startnt.Children {
-		rb, _ := nt.(*RuleBlockNT)
-		term := rb.Children[0].(*Terminal)
-		nonterminals[term.Value] = rb.Children[1].(INode)
-	}
-	return nonterminals, root
-}
-
-// Initialize will initialize/re-initialize the AST for next round of
-// generation.
-func Initialize(c Context) {
-	for _, node := range c["_nonterminals"].(map[string]INode) {
-		node.Initialize(c)
-	}
-	if prodfile, ok := c["_prodfile"]; ok {
-		if filename, err := filepath.Abs(prodfile.(string)); err != nil {
-			panic("Error: bad filepath")
-		} else {
-			c["_prodfile"] = filename
-		}
-	}
-}
+// Circular rats
+var form, Y parsec.Parser
 
 // Terminal rats
-var bang = parsec.Token(`^\!`, "BANG")
-var hash = parsec.Token(`^\#`, "HASH")
-var dot = parsec.Token(`^\.`, "DOT")
-var percent = parsec.Token(`^%`, "PERCENT")
-var colon = parsec.Token(`^:`, "COLON")
-var semicolon = parsec.Token(`^;`, "SEMICOLON")
-var comma = parsec.Token(`^,`, "COMMA")
-var pipe = parsec.Token(`^\|`, "PIPE")
-var dollar = parsec.Token(`^\$`, "DOLLAR")
-var openparan = parsec.Token(`^\(`, "OPENPARAN")
-var closeparan = parsec.Token(`^\)`, "CLOSEPARAN")
-var opencurl = parsec.Token(`^\{`, "OPENPARAN")
-var closecurl = parsec.Token(`^\}`, "CLOSEPARAN")
+var formtok = parsec.Token(`[^ \t\r\n\(\)]+`, "FORMTOK")
+var ident = parsec.Token(`[a-z0-9]+`, "IDENT")
+var ref = parsec.Token(`[$][a-z0-9]+`, "REF")
+var term = parsec.Token(`[A-Z][A-Z0-9]*`, "TERM")
+var sTring = parsec.String()
+var openparan = parsec.Token(`\(`, "OPENPARAN")
+var closeparan = parsec.Token(`\)`, "CLOSEPARAN")
+var dot = parsec.Token(`\.`, "DOT")
+var colon = parsec.Token(`\:`, "COLON")
+var pipe = parsec.Token(`\|`, "PIPE")
 
-var ident = parsec.Ident()
+// NonTerminal rats
+var formarg = parsec.OrdChoice(formtokNode, term, sTring, ref, formtok, &form)
+var ruletok = parsec.OrdChoice(ruletokNode, ident, term, sTring, ref, &form)
+var rules = parsec.Many(rulesNode, parsec.Many(ruleNode, ruletok, nil), pipe)
+var nterm = parsec.And(ntermNode, ident, colon, rules, dot)
 
-var nl = bnlToken("^NL", "NEWLINE", "\n")
-var dq = bnlToken("^DQ", "DQUOTE", `"`)
-var tRue = bnlToken("^TRUE", "TRUE", "true")
-var fAlse = bnlToken("^FALSE", "FALSE", "false")
-var null = bnlToken("^NULL", "NULL", "null")
+func init() {
+    form = parsec.And(
+        formNode,
+        openparan, ident, parsec.Kleene(nil, formarg, nil), closeparan)
+    Y = parsec.And(rootNode,
+        parsec.Kleene(formsNode, &form, nil),
+        parsec.Kleene(ntermsNode, nterm, nil))
 
-// More terminal rats
-func literal(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if len(ns) > 0 {
-			t := ns[0].(*parsec.Terminal)
-			return &Terminal{t.Name, t.Value, t.Position}
-		}
-		return nil
-	}
-	return parsec.OrdChoice(
-		nodify, parsec.String(), parsec.Char(), parsec.Float(), parsec.Int(),
-	)(s)
+    initBuiltins()
+    initLiterals()
 }
 
-func bnlToken(matchval string, n string, v string) parsec.Parser {
-	return func(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-		if term, news := parsec.Token(matchval, n)(s); term != nil {
-			t := term.(*parsec.Terminal)
-			term := Terminal{t.Name, v, t.Position}
-			return &BNLTerminal{term}, news
-		}
-		return nil, s
-	}
+func BuildContext(
+    scope common.Scope,
+    seed  uint64,
+    bagdir string) common.Scope {
+
+    scope["_bagdir"] = bagdir
+    if seed != 0 {
+        scope["_random"] = rand.New(rand.NewSource(int64(seed)))
+    } else {
+        now := time.Now().UnixNano()
+        scope["_random"] = rand.New(rand.NewSource(int64(now)))
+    }
+    scope = scope.ApplyGlobalForms()
+    for _, name := range scope.FormDuplicates(builtins) {
+        log.Printf("warning: `%v` non-terminal is defined as builtin\n", name)
+    }
+    return scope
 }
 
-// nonterminal rats
-func y(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			return &StartNT{NonTerminal{Name: "RULEBLOCKS", Children: ns}}
-		}
-		return nil
-	}
-	return parsec.Many(nodify, ruleblock, parsec.NoEnd)(s)
+func rootNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    return common.NewScopeFromRoot(ns)
 }
 
-func ruleblock(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			idt := ns[0].(*parsec.Terminal)
-			idterm := Terminal{idt.Name, idt.Value, idt.Position}
-			cs := []parsec.ParsecNode{&idterm, ns[2]}
-			return &RuleBlockNT{NonTerminal{Name: "RULEBLOCK", Children: cs}}
-		}
-		return nil
-	}
-	return parsec.And(nodify, ident, colon, rulelines, dot)(s)
+func formsNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    formls := make([]*common.Form, 0, len(ns))
+    for _, n := range ns {
+        formls = append(formls, n.(*common.Form))
+    }
+    return formls
 }
 
-func rulelines(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			return &RuleLinesNT{NonTerminal{Name: "RULELINES", Children: ns}}
-		}
-		return nil
-	}
-	return parsec.Many(nodify, ruleline, pipe)(s)
+func formNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    name := ns[1].(*parsec.Terminal).Value
+    ns = ns[2].([]parsec.ParsecNode)
+    form, ok := builtins[name]
+    if ok { // apply builtin form.
+        return common.NewForm(
+        name,
+        func(scope common.Scope, _ ...interface{}) interface{} {
+            args := make([]interface{}, 0, len(ns))
+            for _, n := range ns {
+                args = append(args, n.(*common.Form).Eval(scope))
+            }
+            return form.Eval(scope, args...)
+        })
+    }
+    // apply non-terminal
+    return common.NewForm(
+    "#"+name,
+    func(scope common.Scope, _ ...interface{}) interface{} {
+        forms, ok := scope.GetNonTerminal(name)
+        if ok {
+            val := EvalForms(name, scope, forms.([]*common.Form))
+            scope[name] = val
+            return val
+        }
+        panic(fmt.Errorf("unknown form name %v\n", name))
+    })
 }
 
-func ruleline(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		var r *RuleNT
-		var ropts *RuleOptionsNT
-		if ns != nil && len(ns) > 0 {
-			r = ns[0].(*RuleNT)
-			if len(ns) > 1 {
-				opts := ns[1].([]parsec.ParsecNode)
-				if len(opts) > 0 {
-					ropts = opts[0].(*RuleOptionsNT)
-				}
-			}
-			return &RuleLineNT{NonTerminal{Name: "RULELINE"}, r, ropts}
-		}
-		return nil
-	}
-	return parsec.And(nodify, rule, parsec.Maybe(nil, ruleOption))(s)
+func ntermsNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    ntls := make(common.NTForms)
+    for _, n := range ns {
+        v := n.(Nt)
+        ntls[v[0].(string)] = v[1].([]*common.Form)
+    }
+    return ntls
 }
 
-func rule(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodifypart := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			if t, ok := ns[0].(*parsec.Terminal); ok {
-				return &Terminal{t.Name, t.Value, t.Position}
-			}
-			return ns[0]
-		}
-		return nil
-	}
-	// Following order of parsers to OrdChoice is important, don't change !!
-	part := parsec.OrdChoice(
-		nodifypart, nl, dq, tRue, fAlse, null, literal, bnf, reference, ident,
-	)
-
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			return &RuleNT{NonTerminal{Name: "RULE", Children: ns}}
-		}
-		return nil
-	}
-	return parsec.Many(nodify, part)(s)
+func ntermNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    t := ns[0].(*parsec.Terminal)
+    return Nt{t.Value, ns[2]}
 }
 
-func ruleOption(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			return &NonTerminal{Name: "RULEARGS", Children: ns}
-		}
-		return nil
-	}
-	args := parsec.Many(nodifyargs, literal, comma)
-
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			sval := ns[1].(*NonTerminal).Children[0].(*Terminal).Value
-			weight, err := strconv.Atoi(sval)
-			if err == nil {
-				return &RuleOptionsNT{weight, weight}
-			}
-			panic(err.Error())
-		}
-		return nil
-
-	}
-	return parsec.And(nodify, opencurl, args, closecurl)(s)
+func rulesNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    rulels := make([]*common.Form, 0, len(ns))
+    weight := 1.0 / float64(len(ns))
+    for _, n := range ns {
+        rule := n.(*common.Form)
+        rule.SetDefaultWeight(weight)
+        rulels = append(rulels, rule)
+    }
+    return rulels
 }
 
-func bnf(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodifyargs := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			return ns[0]
-		}
-		return nil
-	}
-	argparsers := parsec.OrdChoice(nodifyargs, literal, reference)
-	bargs := parsec.Kleene(nil, argparsers, comma)
-
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			return &BnfNT{
-				NonTerminal{Name: "BNF"},
-				ns[0].(*parsec.Terminal).Value, // CallName
-				ns[2].([]parsec.ParsecNode),    // args
-			}
-		}
-		return nil
-	}
-	return parsec.And(nodify, ident, openparan, bargs, closeparan)(s)
+func ruleNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    // compute rule weight.
+    var weight, restrain float64
+    if len(ns) > 1 {
+        if weigh := ns[0].(*common.Form); weigh.Name == "weigh" {
+            rs := weigh.Eval(make(common.Scope)).([]interface{})
+            weight, restrain = rs[0].(float64), rs[1].(float64)
+            ns = ns[1:]
+        } else {
+            weight, restrain = 0.1, 0.0
+        }
+    }
+    // compose rule-form.
+    rats := make([]*common.Form, 0, len(ns))
+    for _, n := range ns {
+        rats = append(rats, n.(*common.Form))
+    }
+    form := common.NewForm(
+        "##rule",
+        func(scope common.Scope, _ ...interface{}) interface{} {
+        str := ""
+        for _, rat := range rats {
+            val := rat.Eval(scope)
+            if val == nil {
+                return nil
+            }
+            str += fmt.Sprintf("%v", val)
+        }
+        return str
+    })
+    form.SetWeight(weight, restrain)
+    return form
 }
 
-func reference(s parsec.Scanner) (parsec.ParsecNode, parsec.Scanner) {
-	nodify := func(ns []parsec.ParsecNode) parsec.ParsecNode {
-		if ns != nil && len(ns) > 0 {
-			t := ns[1].(*parsec.Terminal)
-			return &ReferenceNT{NonTerminal{Name: "REFERENCE", Value: t.Value}}
-		}
-		return nil
-	}
-	return parsec.And(nodify, dollar, ident)(s)
+func ruletokNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    switch n := ns[0].(type) {
+    case *parsec.Terminal:
+        switch n.Name {
+        case "IDENT":
+            return identNode(n)
+        case "TERM":
+            return termNode(n)
+        case "STRING":
+            return stringNode(n)
+        case "REF":
+            return refNode(n)
+        }
+
+    case *common.Form:
+        return n
+    }
+    panic(fmt.Errorf("unknown form type %T\n", ns[0]))
+}
+
+func formtokNode(ns []parsec.ParsecNode) parsec.ParsecNode {
+    switch n := ns[0].(type) {
+    case *parsec.Terminal:
+        switch n.Name {
+        case "TERM":
+            return termNode(n)
+        case "STRING":
+            return stringNode(n)
+        case "REF":
+            return refNode(n)
+        case "FORMTOK":
+            return common.NewForm(
+            "##formtok",
+            func(_ common.Scope, _ ...interface{}) interface{} {
+                return n.Value
+            })
+        }
+
+    case *common.Form:
+        return n
+    }
+    panic(fmt.Errorf("unknown form type %T\n", ns[0]))
+}
+
+func varNode(n *parsec.Terminal) *common.Form {
+    return common.NewForm(
+    "##var",
+    func(scope common.Scope, _ ...interface{}) interface{} {
+        val, ok := scope.Get(n.Value)
+        if !ok {
+            panic(fmt.Errorf("unknown variable %v\n", n.Value))
+        }
+        return val
+    })
+}
+
+func refNode(n *parsec.Terminal) *common.Form {
+    return common.NewForm(
+    "##ref",
+    func(scope common.Scope, _ ...interface{}) interface{} {
+        switch n.Value[0] {
+        case '$':
+            val, ok := scope.Get(n.Value[1:])
+            if !ok {
+                panic(fmt.Errorf("unknown reference %v\n", n.Value))
+            }
+            return val
+        }
+        panic(fmt.Errorf("unknown form %v as part of rule\n", n.Value))
+    })
+}
+
+func identNode(n *parsec.Terminal) *common.Form {
+    return common.NewForm(
+    "##ident",
+    func(scope common.Scope, _ ...interface{}) interface{} {
+        name := n.Value
+        forms, ok := scope.GetNonTerminal(name)
+        if ok {
+            val := EvalForms(name, scope, forms.([]*common.Form))
+            scope[n.Value] = val
+            return val
+        }
+        panic(fmt.Errorf("unknown nonterminal %v\n", n.Value))
+    })
+}
+
+func termNode(n *parsec.Terminal) *common.Form {
+    str, _ := literals[n.Value]
+    return common.NewForm(
+    "##term",
+    func(_ common.Scope, _ ...interface{}) interface{} { return str })
+}
+
+func stringNode(n *parsec.Terminal) *common.Form {
+    str := n.Value[1:len(n.Value)-1]
+    return common.NewForm(
+    "##string",
+    func(_ common.Scope, _ ...interface{}) interface{} { return str })
+}
+
+func one2one(ns []parsec.ParsecNode) parsec.ParsecNode {
+    if ns == nil || len(ns) == 0 {
+        return nil
+    }
+    return ns[0]
+}
+
+//--------------------
+// initialize builtins
+//--------------------
+
+var builtins = make(map[string]*common.Form)
+var literals = make(map[string]string)
+
+func initBuiltins() {
+    builtins["let"] = common.NewForm("let", builtin.Let)
+    builtins["weigh"] = common.NewForm("weigh", builtin.Weigh)
+    builtins["bag"] = common.NewForm("bag", builtin.Bag)
+    builtins["range"] = common.NewForm("range", builtin.Range)
+    builtins["rangef"] = common.NewForm("rangef", builtin.Rangef)
+    builtins["ranget"] = common.NewForm("ranget", builtin.Ranget)
+    builtins["choice"] = common.NewForm("choice", builtin.Choice)
+    builtins["uuid"] = common.NewForm("uuid", builtin.Uuid)
+    builtins["inc"] = common.NewForm("inc", builtin.Inc)
+    builtins["dec"] = common.NewForm("dec", builtin.Dec)
+    builtins["sprintf"] = common.NewForm("sprintf", builtin.Sprintf)
+}
+
+func initLiterals() {
+    literals["DQ"] = "\""
+    literals["NL"] = "\n"
 }
