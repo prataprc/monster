@@ -10,7 +10,6 @@ import "github.com/prataprc/monster/common"
 var _ = fmt.Sprintf("dummy")
 
 func Choice(scope common.Scope, args ...interface{}) interface{} {
-    rnd := scope["_random"].(*rand.Rand)
-    return args[rnd.Intn(len(args))]
+	rnd := scope["_random"].(*rand.Rand)
+	return args[rnd.Intn(len(args))]
 }
-
