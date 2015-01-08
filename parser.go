@@ -92,7 +92,6 @@ func BuildContext(
 		now := time.Now().UnixNano()
 		scope["_random"] = rand.New(rand.NewSource(int64(now)))
 	}
-	scope = scope.ApplyGlobalForms()
 	for _, name := range scope.FormDuplicates(builtins) {
 		log.Printf("warning: `%v` non-terminal is defined as builtin\n", name)
 	}

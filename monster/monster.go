@@ -110,5 +110,6 @@ func evaluate(name string, scope common.Scope, forms []*common.Form) interface{}
 			log.Printf("%v", r)
 		}
 	}()
+	scope = scope.ApplyGlobalForms()
 	return monster.EvalForms(name, scope, forms)
 }

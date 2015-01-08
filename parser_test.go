@@ -36,6 +36,7 @@ func TestString(t *testing.T) {
 	forms := scope["_globalForms"].([]*common.Form)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 	if len(forms) > 0 {
 		t.Fatalf("Expected empty forms for string.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -58,6 +59,7 @@ func TestTerm(t *testing.T) {
 	forms := scope["_globalForms"].([]*common.Form)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 	if len(forms) > 0 {
 		t.Fatalf("Expected empty forms for term.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -80,6 +82,7 @@ func TestForm(t *testing.T) {
 	nterms := scope["_nonterminals"].(common.NTForms)
 	forms := scope["_globalForms"].([]*common.Form)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 	if len(forms) != 1 {
 		t.Fatalf("Expected empty forms for form.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -102,6 +105,7 @@ func TestNTerm(t *testing.T) {
 	nterms := scope["_nonterminals"].(common.NTForms)
 	forms := scope["_globalForms"].([]*common.Form)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 	if len(forms) != 1 {
 		t.Fatalf("Expected empty forms for form.prod %v", forms)
 	} else if len(nterms) != 2 {
@@ -124,6 +128,7 @@ func TestOr(t *testing.T) {
 	nterms := scope["_nonterminals"].(common.NTForms)
 	forms := scope["_globalForms"].([]*common.Form)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 	if len(forms) != 1 {
 		t.Fatalf("Expected empty forms for form.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -145,6 +150,7 @@ func BenchmarkString(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -162,6 +168,7 @@ func BenchmarkTerm(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -179,6 +186,7 @@ func BenchmarkForm(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -196,6 +204,7 @@ func BenchmarkNTerm(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -213,6 +222,7 @@ func BenchmarkOr(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -243,6 +253,7 @@ func BenchmarkUsersProd(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	out := 0
@@ -275,6 +286,7 @@ func BenchmarkProjsProd(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	out := 0
@@ -307,6 +319,7 @@ func BenchmarkJSONProd(b *testing.B) {
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
+	scope = scope.ApplyGlobalForms()
 
 	b.ResetTimer()
 	out := 0

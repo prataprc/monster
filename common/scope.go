@@ -47,10 +47,11 @@ func (scope Scope) GetNonTerminal(name string) (nt interface{}, ok bool) {
 }
 
 func (scope Scope) ApplyGlobalForms() Scope {
+	newscope := scope.Clone()
 	for _, form := range scope["_globalForms"].([]*Form) {
-		form.Eval(scope)
+		form.Eval(newscope)
 	}
-	return scope
+	return newscope
 }
 
 func (scope Scope) FormDuplicates(builtins map[string]*Form) []string {
