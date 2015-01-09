@@ -12,7 +12,7 @@ Can be invoked via command-line like,
           -o="-": specify an output file
           -seed=37: seed value
 
-Example production grammar, that generate randomized user documents.
+Example production grammar, that generate randomized json documents.
 
 .. code-block:: bnf
 
