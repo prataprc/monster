@@ -20,7 +20,7 @@ properties  : type ",\n"
               friends.
 
 type       : "\"type\": \"user\"".
-docid      : "\"docid\": \"" (sprintf "\"User-%v\"" $guid) DQ.
+docid      : "\"docid\": \"" (sprintf "User-%v" $guid) DQ.
 age        : "\"age\": " (range 15 80).
 eyecolor   : "\"eyeColor\": \"" (choice "brown" "blue" "green") DQ.
 active     : "\"isActive\": " (choice "true" "false").
@@ -47,7 +47,7 @@ registered : "\"registered\": \"" regtime DQ.
 
 friends    : (let friendcount 0) "\"friends\": [ " fewfriends " ]\n".
 fewfriends : (weigh 0.1) frienddoc
-           | (weigh 0.8 0.3) frienddoc (inc friendcount) fewfriends.
+           | (weigh 0.8 0.3) frienddoc ", "(inc friendcount) fewfriends.
 frienddoc  : "{ " id  frname " }".
   id       : "\"id\": " $friendcount ", ".
   frname   : "\"name\": \"" (bag "./propernames") DQ.
