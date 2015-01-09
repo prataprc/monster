@@ -1,3 +1,5 @@
+//  Copyright (c) 2013 Couchbase, Inc.
+
 package common
 
 import "fmt"
