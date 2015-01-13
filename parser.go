@@ -38,17 +38,22 @@ import "github.com/prataprc/monster/common"
 //            |  form
 // ws         -> `[ \t\r\n]+`
 
+// Nt is intermediate data structure.
 type Nt [2]interface{}
 
+// EvalForms refers to common.EvalForms
 var EvalForms = common.EvalForms
 
 // Circular rats
-var form, Y parsec.Parser
+var form parsec.Parser
+
+// Y root combinator for monster.
+var Y parsec.Parser
 
 // Terminal rats
 var formtok = parsec.Token(`[^ \t\r\n\(\)]+`, "FORMTOK")
 var ident = parsec.Token(`[a-z0-9]+`, "IDENT")
-var ref = parsec.Token(`[$][a-z0-9]+`, "REF")
+var ref = parsec.Token(`[$#][a-z0-9]+`, "REF")
 var term = parsec.Token(`[A-Z][A-Z0-9]*`, "TERM")
 var sTring = parsec.String()
 var literaltok = parsec.OrdChoice(
@@ -80,17 +85,18 @@ func init() {
 	initLiterals()
 }
 
+// BuildContext to initialize a new scope for evaluating production grammars.
 func BuildContext(
 	scope common.Scope,
 	seed uint64,
 	bagdir string) common.Scope {
 
-	scope["_bagdir"] = bagdir
+	scope.SetBagdir(bagdir)
 	if seed != 0 {
-		scope["_random"] = rand.New(rand.NewSource(int64(seed)))
+		scope.SetRandom(rand.New(rand.NewSource(int64(seed))))
 	} else {
 		now := time.Now().UnixNano()
-		scope["_random"] = rand.New(rand.NewSource(int64(now)))
+		scope.SetRandom(rand.New(rand.NewSource(int64(now))))
 	}
 	for _, name := range scope.FormDuplicates(builtins) {
 		log.Printf("warning: `%v` non-terminal is defined as builtin\n", name)
@@ -131,8 +137,8 @@ func formNode(ns []parsec.ParsecNode) parsec.ParsecNode {
 		func(scope common.Scope, _ ...interface{}) interface{} {
 			forms, ok := scope.GetNonTerminal(name)
 			if ok {
-				val := EvalForms(name, scope, forms.([]*common.Form))
-				scope[name] = val
+				val := EvalForms(name, scope, forms)
+				scope.Set(name, val, false /*global*/)
 				return val
 			}
 			panic(fmt.Errorf("unknown form name %v\n", name))
@@ -185,11 +191,12 @@ func ruleNode(ns []parsec.ParsecNode) parsec.ParsecNode {
 		"##rule",
 		func(scope common.Scope, _ ...interface{}) interface{} {
 			str := ""
-			for _, rat := range rats {
+			for i, rat := range rats {
 				val := rat.Eval(scope)
 				if val == nil {
 					return nil
 				}
+				scope.Set("#"+strconv.Itoa(i), val, false /*global*/)
 				str += fmt.Sprintf("%v", val)
 			}
 			return str
@@ -254,7 +261,7 @@ func varNode(n *parsec.Terminal) *common.Form {
 	return common.NewForm(
 		"##var",
 		func(scope common.Scope, _ ...interface{}) interface{} {
-			val, ok := scope.Get(n.Value)
+			val, _, ok := scope.Get(n.Value)
 			if !ok {
 				panic(fmt.Errorf("unknown variable %v\n", n.Value))
 			}
@@ -268,9 +275,15 @@ func refNode(n *parsec.Terminal) *common.Form {
 		func(scope common.Scope, _ ...interface{}) interface{} {
 			switch n.Value[0] {
 			case '$':
-				val, ok := scope.Get(n.Value[1:])
+				val, _, ok := scope.Get(n.Value[1:])
 				if !ok {
 					panic(fmt.Errorf("unknown reference %v\n", n.Value))
+				}
+				return val
+			case '#':
+				val, _, ok := scope.Get(n.Value)
+				if !ok {
+					panic(fmt.Errorf("unknown argument %v\n", n.Value))
 				}
 				return val
 			}
@@ -285,8 +298,8 @@ func identNode(n *parsec.Terminal) *common.Form {
 			name := n.Value
 			forms, ok := scope.GetNonTerminal(name)
 			if ok {
-				val := EvalForms(name, scope, forms.([]*common.Form))
-				scope[n.Value] = val
+				val := EvalForms(name, scope, forms)
+				scope.Set(n.Value, val, false /*global*/)
 				return val
 			}
 			panic(fmt.Errorf("unknown nonterminal %v\n", n.Value))
@@ -367,6 +380,7 @@ var literals = make(map[string]string)
 
 func initBuiltins() {
 	builtins["let"] = common.NewForm("let", builtin.Let)
+	builtins["global"] = common.NewForm("global", builtin.Global)
 	builtins["weigh"] = common.NewForm("weigh", builtin.Weigh)
 	builtins["bag"] = common.NewForm("bag", builtin.Bag)
 	builtins["range"] = common.NewForm("range", builtin.Range)
@@ -376,6 +390,7 @@ func initBuiltins() {
 	builtins["uuid"] = common.NewForm("uuid", builtin.Uuid)
 	builtins["inc"] = common.NewForm("inc", builtin.Inc)
 	builtins["dec"] = common.NewForm("dec", builtin.Dec)
+	builtins["len"] = common.NewForm("len", builtin.Len)
 	builtins["sprintf"] = common.NewForm("sprintf", builtin.Sprintf)
 }
 

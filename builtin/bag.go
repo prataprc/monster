@@ -5,22 +5,23 @@ package builtin
 import "fmt"
 import "os"
 import "encoding/csv"
-import "math/rand"
 import "path/filepath"
 
 import "github.com/prataprc/monster/common"
 
 var cacheBagRecords = make(map[string][][]string)
 
+// Bag will fetch a random line from file and return it.
+// args[0] - filename.
 func Bag(scope common.Scope, args ...interface{}) interface{} {
 	var err error
 
 	filename := args[0].(string)
 	if !filepath.IsAbs(filename) {
-		if bagdir, ok := scope["_bagdir"].(string); ok {
+		if bagdir, _, ok := scope.GetString("_bagdir"); ok {
 			filename = filepath.Join(bagdir, filename)
-		} else if prodfile, ok := scope["_prodfile"]; ok {
-			dirpath := filepath.Dir(prodfile.(string))
+		} else if prodfile, _, ok := scope.GetString("_prodfile"); ok {
+			dirpath := filepath.Dir(prodfile)
 			filename = filepath.Join(dirpath, filename)
 		}
 	}
@@ -34,7 +35,7 @@ func Bag(scope common.Scope, args ...interface{}) interface{} {
 		cacheBagRecords[filename] = records
 	}
 	if len(records) > 0 {
-		rnd := scope["_random"].(*rand.Rand)
+		rnd := scope.GetRandom()
 		record := records[rnd.Intn(len(records))]
 		if len(record) > 0 {
 			return record[0]
@@ -52,5 +53,5 @@ func readBag(filename string) [][]string {
 	if err == nil {
 		return records
 	}
-	panic(fmt.Errorf("Unable to read file %v in CSV format\n", filename))
+	panic(fmt.Errorf("unable to read file %v in CSV format\n", filename))
 }

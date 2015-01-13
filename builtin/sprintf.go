@@ -8,6 +8,7 @@ import "github.com/prataprc/monster/common"
 
 var _ = fmt.Sprintf("dummy")
 
+// Sprintf is same as golang.Printf
 func Sprintf(scope common.Scope, args ...interface{}) interface{} {
 	if len(args) < 1 {
 		panic(fmt.Errorf("insufficient argument to Sprintf"))

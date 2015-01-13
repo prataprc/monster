@@ -4,12 +4,14 @@ package builtin
 
 import "fmt"
 import "time"
-import "math/rand"
 
 import "github.com/prataprc/monster/common"
 
+// Ranget will randomly pick a value from args[0] to args[1]
+// and return the same.
+// args... are expected to be in time.RFC3339 format
 func Ranget(scope common.Scope, args ...interface{}) interface{} {
-	rnd := scope["_random"].(*rand.Rand)
+	rnd := scope.GetRandom()
 	start, err := time.Parse(time.RFC3339, args[0].(string))
 	if err != nil {
 		panic(fmt.Errorf("parsing first argument %v: %v\n", args[0], err))

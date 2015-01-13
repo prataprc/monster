@@ -3,15 +3,17 @@
 package builtin
 
 import "fmt"
-import "math/rand"
 
 import "github.com/prataprc/monster/common"
 
+// Range will randomly pick a value from args[0] to args[1]
+// and return the same.
+// args... are expected to be in int64
 func Range(scope common.Scope, args ...interface{}) interface{} {
 	var min, max int64
 	var err error
 
-	rnd := scope["_random"].(*rand.Rand)
+	rnd := scope.GetRandom()
 	if len(args) == 2 {
 		min, max = args[0].(int64), args[1].(int64)
 		if err != nil {
@@ -22,7 +24,7 @@ func Range(scope common.Scope, args ...interface{}) interface{} {
 		max = args[0].(int64)
 
 	} else {
-		panic(fmt.Errorf("Atleast one argument expected for range-form\n"))
+		panic(fmt.Errorf("atleast one argument expected for range-form\n"))
 	}
 	return rnd.Int63n(max-min) + min
 }

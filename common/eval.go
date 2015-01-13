@@ -3,15 +3,16 @@
 package common
 
 import "fmt"
-import "math/rand"
 
 var _ = fmt.Sprintf("dummy")
 
+// EvalForms will evaluate the non-terminal form `name`
+// by randomly picking one of the []*Form defined as its rules.
 func EvalForms(name string, scope Scope, forms []*Form) interface{} {
 	if len(forms) == 0 {
 		return nil
 	}
-	rnd := scope["_random"].(*rand.Rand)
+	rnd := scope.GetRandom()
 	lookup, failed := make([]bool, len(forms)), 0
 	for failed < len(forms) {
 		f := rnd.Float64()
@@ -33,19 +34,19 @@ func EvalForms(name string, scope Scope, forms []*Form) interface{} {
 }
 
 func currWeight(name string, i int, scope Scope, form *Form) float64 {
-	nm := fmt.Sprintf("##form_%s%d", name, i)
-	if w, ok := scope[nm]; ok {
-		return w.(float64)
+	nm := fmt.Sprintf("%s%d", name, i)
+	if w, ok := scope.GetWeight(nm); ok {
+		return w
 	}
 	return form.Weight
 }
 
 func decWeight(name string, i int, scope Scope, form *Form) Scope {
-	nm := fmt.Sprintf("##form_%s%d", name, i)
+	nm := fmt.Sprintf("%s%d", name, i)
 	weight := form.Weight
-	if w, ok := scope[nm]; ok {
-		weight = w.(float64)
+	if w, ok := scope.GetWeight(nm); ok {
+		weight = w
 	}
-	scope[nm] = weight - form.Restrain
+	scope.SetWeight(nm, weight-form.Restrain)
 	return scope
 }

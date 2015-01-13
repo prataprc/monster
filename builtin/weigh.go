@@ -8,6 +8,8 @@ import "github.com/prataprc/monster/common"
 
 var _ = fmt.Sprintf("dummy")
 
+// Weigh can be used as the first form in any rule, to
+// define its choice preference for or grammar.
 func Weigh(scope common.Scope, args ...interface{}) interface{} {
 	if len(args) < 1 {
 		panic(fmt.Errorf("insufficient arguments\n"))
