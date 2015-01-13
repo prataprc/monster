@@ -380,6 +380,7 @@ var literals = make(map[string]string)
 
 func initBuiltins() {
 	builtins["let"] = common.NewForm("let", builtin.Let)
+	builtins["letr"] = common.NewForm("letr", builtin.Letr)
 	builtins["global"] = common.NewForm("global", builtin.Global)
 	builtins["weigh"] = common.NewForm("weigh", builtin.Weigh)
 	builtins["bag"] = common.NewForm("bag", builtin.Bag)
