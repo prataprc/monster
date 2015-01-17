@@ -115,7 +115,7 @@ func (scope Scope) Get(name string) (value interface{}, g, ok bool) {
 	}
 	value, ok = (scope["_globals"].(Scope))[name]
 	if ok {
-		return value, false, true
+		return value, true, true
 	}
 	return nil, false, false
 }
