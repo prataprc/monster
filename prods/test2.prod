@@ -1,0 +1,13 @@
+(let guid (uuid))
+
+s : "{ " properties "}".
+
+properties  : type ",\n"
+              docid ",\n"
+              "\"first-name\": \"" fname DQ ",\n"
+              lastname.
+
+type       : "\"type\": \"user\"".
+docid      : "\"docid\": \"" (sprintf "User-%v" $guid) DQ.
+fname      : (bag "./propernames").
+lastname   : "\"last-name\": \""  (bag "./propernames") DQ.
