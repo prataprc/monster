@@ -91,6 +91,8 @@ func BuildContext(
 	seed uint64,
 	bagdir string) common.Scope {
 
+	rootns := []parsec.ParsecNode{scope["_globalForms"], scope["_nonterminals"]}
+	scope = common.NewScopeFromRoot(rootns)
 	scope.SetBagdir(bagdir)
 	if seed != 0 {
 		scope.SetRandom(rand.New(rand.NewSource(int64(seed))))
@@ -178,8 +180,6 @@ func ruleNode(ns []parsec.ParsecNode) parsec.ParsecNode {
 			rs := weigh.Eval(make(common.Scope)).([]interface{})
 			weight, restrain = rs[0].(float64), rs[1].(float64)
 			ns = ns[1:]
-		} else {
-			weight, restrain = 0.1, 0.0
 		}
 	}
 	// compose rule-form.
