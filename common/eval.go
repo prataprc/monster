@@ -27,6 +27,8 @@ func EvalForms(name string, scope Scope, forms []*Form) interface{} {
 					continue
 				}
 				return val
+			} else if weight <= 0.0 {
+				failed++
 			}
 		}
 	}
