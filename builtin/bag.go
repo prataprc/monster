@@ -6,10 +6,12 @@ import "fmt"
 import "os"
 import "encoding/csv"
 import "path/filepath"
+import "sync"
 
 import "github.com/prataprc/monster/common"
 
 var cacheBagRecords = make(map[string][][]string)
+var bagrw sync.RWMutex
 
 // Bag will fetch a random line from file and return it.
 // args[0] - filename.
@@ -29,10 +31,14 @@ func Bag(scope common.Scope, args ...interface{}) interface{} {
 		panic(fmt.Errorf("bad filepath: %v\n", filename))
 	}
 
+	bagrw.RLock()
 	records, ok := cacheBagRecords[filename]
+	bagrw.RUnlock()
 	if !ok {
 		records = readBag(filename)
+		bagrw.Lock()
 		cacheBagRecords[filename] = records
+		bagrw.Unlock()
 	}
 	if len(records) > 0 {
 		rnd := scope.GetRandom()
