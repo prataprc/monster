@@ -71,10 +71,10 @@ func main() {
 	root := compile(parsec.NewScanner(text))
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = monster.BuildContext(scope, uint64(options.seed), options.bagdir)
-	scope["_prodfile"] = prodfile
 	if options.nonterm != "" {
 		for i := 0; i < options.count; i++ {
+			scope = monster.BuildContext(scope, uint64(i), options.bagdir)
+			scope["_prodfile"] = prodfile
 			val := evaluate("root", scope, nterms[options.nonterm])
 			outtext := fmt.Sprintf("%v\n", val)
 			if _, err := outfd.Write([]byte(outtext)); err != nil {
@@ -85,6 +85,8 @@ func main() {
 	} else {
 		// evaluate
 		for i := 0; i < options.count; i++ {
+			scope = monster.BuildContext(scope, uint64(i), options.bagdir)
+			scope["_prodfile"] = prodfile
 			val := evaluate("root", scope, nterms["s"])
 			outtext := fmt.Sprintf("%v\n", val)
 			if _, err := outfd.Write([]byte(outtext)); err != nil {
