@@ -8,6 +8,8 @@ import "github.com/prataprc/monster/common"
 
 var _ = fmt.Sprintf("dummy")
 
+const DefaultRestrain = 0.0
+
 // Weigh can be used as the first form in any rule, to
 // define its choice preference for or grammar.
 func Weigh(scope common.Scope, args ...interface{}) interface{} {
@@ -19,5 +21,5 @@ func Weigh(scope common.Scope, args ...interface{}) interface{} {
 		restrain := args[1].(float64)
 		return []interface{}{weight, restrain}
 	}
-	return []interface{}{weight, 0.0}
+	return []interface{}{weight, DefaultRestrain}
 }
