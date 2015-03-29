@@ -1,8 +1,75 @@
 //  Copyright (c) 2013 Couchbase, Inc.
 
+// Use production grammer with a rudimentary S expression like
+// language to generate permutations and combinations. Every
+// element in the grammer including the S expressions will be
+// converted into a Form object.
+//
 // Parser uses `parsec` tool to parse production grammar and
 // construct generator tree.
-
+//
+// Monster grammar
+//
+//     bnf        : forms nterminal*
+//     nterminal  : ":" rules "."
+//     rules      : ruletok+
+//                : rules "|" ruletok+
+//     ruletok    : ident
+//                |  ref
+//                |  terminal
+//                |  string
+//                |  form
+//
+//     forms      : form*
+//     form       : "(" formarg+ ")"
+//     ident      : `[a-z0-9]+`
+//     terminal   : `[A-Z][A-Z0-9]*`
+//     formarg    : `[^ \t\r\n\(\)]+`
+//                |  form
+//     ws         : `[ \t\r\n]+`
+//
+//
+// nomenclature of forms constructed while compiling a production file,
+//
+// forms["##literaltok"] evaluating INT/HEX/OCT/FLOAT/TRUE/FALSE in form-args
+// forms["##formtok"] evaluating any other form-args, an open ended spec
+// forms["##ident"] evaluating non-terminal identifiers in rule-args
+// forms["##term"] evaluating terminals like DQ, NL in farm-args or rule-args
+// forms["##string"] evaluating literal strings in form-args and rule-args
+// forms["##ref"] evaluating references into local/global namespace
+// forms["##rule"] evaluating a non-terminal rule
+// forms[<symbol>] evaluating builtin or application supplied functions
+// forms["#<ident>] evaluating non-terminal forms from top-level
+// forms["##var"] in unused as of now
+//
+// these forms are evaluated from one of top-level forms to generate
+// permutations and combinations.
+//
+// Form evaluation happens at the following points using
+// Eval() or EvalForms() APIs,
+// - when a global S-expression invokes a builtin function
+// - when a global S-expression invokes a non-terminal
+// - before passing S-expression arguments to a form.
+// - when special form `weigh` is identified at the begining of
+//   a non-terminal rule definition.
+// - when a non-terminal rule is randomly picked by EvalForms()
+// - before passing rule arguments to a rule-form.
+//
+// references:
+//  $<symbol> specified in a rule or,
+//  #<symbol> specified in a form argument,
+//      will evaluate a lookup into local or global scope.
+//
+// Programmatically invoking monster {
+//
+//    root, _ := monster.Y(parsec.NewScanner(text)).(common.Scope)
+//    scope := monster.BuildContext(root, seed, bagdir, prodfile)
+//    nterms := scope["_nonterminals"].(common.NTForms)
+//    for i := 0; i < count; i++ {
+//        scope = scope.RebuildContext()
+//        val := monster.EvalForms("root", scope, nterms["s"])
+//    }
+// }
 package monster
 
 import "fmt"
@@ -15,33 +82,10 @@ import "github.com/prataprc/goparsec"
 import "github.com/prataprc/monster/builtin"
 import "github.com/prataprc/monster/common"
 
-//----------------
-// Monster grammar
-//----------------
-
-// bnf        -> forms nterminal*
-// nterminal  -> ident ":" rules "."
-// rules      -> ruletok+
-//            -> rules "|" ruletok+
-// ruletok    -> ident
-//            |  ref
-//            |  terminal
-//            |  string
-//            |  form
-//
-// forms      -> form*
-// form       -> "(" formarg+ ")"
-
-// ident      -> `[a-z0-9]+`
-// terminal   -> `[A-Z][A-Z0-9]*`
-// formarg    -> `[^ \t\r\n\(\)]+`
-//            |  form
-// ws         -> `[ \t\r\n]+`
-
 // Nt is intermediate data structure.
 type Nt [2]interface{}
 
-// EvalForms refers to common.EvalForms
+// EvalForms refer to common.EvalForms for more documentation
 var EvalForms = common.EvalForms
 
 // Circular rats
@@ -85,14 +129,23 @@ func init() {
 	initLiterals()
 }
 
-// BuildContext to initialize a new scope for evaluating production grammars.
+// BuildContext to initialize a new scope for evaluating
+// production grammars. The scope contains the following
+// elements,
+//
+//  _globalForms:  list of top-level S-expression definitions
+//  _nonterminals: list of top-level non-terminals in production
+//  _weights:      running weights for each non-terminal rule
+//  _globals:      global scope
+//      _bagdir:       absolute path to directory containing bags of data
+//      _prodfile:     absolute path to production file
+//      _random:       reference to seeded *math.rand.Rand object
 func BuildContext(
 	scope common.Scope,
 	seed uint64,
-	bagdir string) common.Scope {
+	bagdir, prodfile string) common.Scope {
 
-	rootns := []parsec.ParsecNode{scope["_globalForms"], scope["_nonterminals"]}
-	scope = common.NewScopeFromRoot(rootns)
+	scope["_prodfile"] = prodfile
 	scope.SetBagdir(bagdir)
 	if seed != 0 {
 		scope.SetRandom(rand.New(rand.NewSource(int64(seed))))
@@ -100,10 +153,14 @@ func BuildContext(
 		now := time.Now().UnixNano()
 		scope.SetRandom(rand.New(rand.NewSource(int64(now))))
 	}
-	for _, name := range scope.FormDuplicates(builtins) {
-		log.Printf("warning: `%v` non-terminal is defined as builtin\n", name)
+	// verify conflicts between user provided form-names
+	// and builtin form-names.
+	for name := range scope["_nonterminals"].(common.NTForms) {
+		if _, ok := builtins[name]; ok {
+			log.Printf("warn: `%v` non-terminal is defined as builtin\n", name)
+		}
 	}
-	return scope
+	return scope.RebuildContext()
 }
 
 func rootNode(ns []parsec.ParsecNode) parsec.ParsecNode {

@@ -26,17 +26,19 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	text, err := ioutil.ReadFile("./testdata/string.prod")
+	prodfile := "./testdata/string.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		t.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	forms := scope["_globalForms"].([]*common.Form)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 	if len(forms) > 0 {
 		t.Fatalf("Expected empty forms for string.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -49,17 +51,19 @@ func TestString(t *testing.T) {
 }
 
 func TestTerm(t *testing.T) {
-	text, err := ioutil.ReadFile("./testdata/term.prod")
+	prodfile := "./testdata/term.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		t.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	forms := scope["_globalForms"].([]*common.Form)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 	if len(forms) > 0 {
 		t.Fatalf("Expected empty forms for term.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -72,17 +76,19 @@ func TestTerm(t *testing.T) {
 }
 
 func TestForm(t *testing.T) {
-	text, err := ioutil.ReadFile("./testdata/form.prod")
+	prodfile := "./testdata/form.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		t.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	forms := scope["_globalForms"].([]*common.Form)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 	if len(forms) != 1 {
 		t.Fatalf("Expected empty forms for form.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -95,17 +101,19 @@ func TestForm(t *testing.T) {
 }
 
 func TestNTerm(t *testing.T) {
-	text, err := ioutil.ReadFile("./testdata/nterm.prod")
+	prodfile := "./testdata/nterm.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		t.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	forms := scope["_globalForms"].([]*common.Form)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 	if len(forms) != 1 {
 		t.Fatalf("Expected empty forms for form.prod %v", forms)
 	} else if len(nterms) != 2 {
@@ -118,17 +126,19 @@ func TestNTerm(t *testing.T) {
 }
 
 func TestOr(t *testing.T) {
-	text, err := ioutil.ReadFile("./testdata/or.prod")
+	prodfile := "./testdata/or.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		t.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	forms := scope["_globalForms"].([]*common.Form)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 	if len(forms) != 1 {
 		t.Fatalf("Expected empty forms for form.prod %v", forms)
 	} else if len(nterms) != 1 {
@@ -140,103 +150,129 @@ func TestOr(t *testing.T) {
 	}
 }
 
-func BenchmarkString(b *testing.B) {
-	text, err := ioutil.ReadFile("./testdata/string.prod")
+func BenchmarkStringProd(b *testing.B) {
+	prodfile := "./testdata/string.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EvalForms("root", scope, nterms["s"])
+		scope = scope.RebuildContext()
+		if val, ok := EvalForms("root", scope, nterms["s"]).(string); !ok {
+			b.Fatalf("not string %v\n", val)
+		}
 	}
 }
 
-func BenchmarkTerm(b *testing.B) {
-	text, err := ioutil.ReadFile("./testdata/term.prod")
+func BenchmarkTermProd(b *testing.B) {
+	prodfile := "./testdata/term.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EvalForms("root", scope, nterms["s"])
+		scope = scope.RebuildContext()
+		if val, ok := EvalForms("root", scope, nterms["s"]).(string); !ok {
+			b.Fatalf("not string %v\n", val)
+		}
 	}
 }
 
-func BenchmarkForm(b *testing.B) {
-	text, err := ioutil.ReadFile("./testdata/form.prod")
+func BenchmarkFormProd(b *testing.B) {
+	prodfile := "./testdata/form.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EvalForms("root", scope, nterms["s"])
+		scope = scope.RebuildContext()
+		if val, ok := EvalForms("root", scope, nterms["s"]).(string); !ok {
+			b.Fatalf("not string %v\n", val)
+		}
 	}
 }
 
-func BenchmarkNTerm(b *testing.B) {
-	text, err := ioutil.ReadFile("./testdata/nterm.prod")
+func BenchmarkNTermProd(b *testing.B) {
+	prodfile := "./testdata/nterm.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EvalForms("root", scope, nterms["s"])
+		scope = scope.RebuildContext()
+		if val, ok := EvalForms("root", scope, nterms["s"]).(string); !ok {
+			b.Fatalf("not string %v\n", val)
+		}
 	}
 }
 
-func BenchmarkOr(b *testing.B) {
-	text, err := ioutil.ReadFile("./testdata/or.prod")
+func BenchmarkOrProd___(b *testing.B) {
+	prodfile := "./testdata/or.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EvalForms("root", scope, nterms["s"])
+		scope = scope.RebuildContext()
+		if val, ok := EvalForms("root", scope, nterms["s"]).(string); !ok {
+			b.Fatalf("not string %v\n", val)
+		}
 	}
 }
 
 func BenchmarkUsersProdY(b *testing.B) {
-	text, err := ioutil.ReadFile("./prods/users.prod")
+	prodfile := "./prods/users.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
-	s := parsec.NewScanner(text)
 
+	s := parsec.NewScanner(text)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		Y(s)
@@ -244,32 +280,40 @@ func BenchmarkUsersProdY(b *testing.B) {
 }
 
 func BenchmarkUsersProd(b *testing.B) {
-	text, err := ioutil.ReadFile("./prods/users.prod")
+	prodfile := "./prods/users.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	out := 0
 	for i := 0; i < b.N; i++ {
-		out += len(EvalForms("root", scope, nterms["s"]).(string))
+		scope = scope.RebuildContext()
+		if val, ok := EvalForms("root", scope, nterms["s"]).(string); !ok {
+			b.Fatalf("not string `%v`\n", val)
+		} else {
+			out += len(val)
+		}
 	}
 	b.SetBytes(int64(float64(out) / float64(b.N)))
 }
 
 func BenchmarkProjsProdY(b *testing.B) {
-	text, err := ioutil.ReadFile("./prods/projects.prod")
+	prodfile := "./prods/projects.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
-	s := parsec.NewScanner(text)
 
+	s := parsec.NewScanner(text)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		Y(s)
@@ -277,20 +321,23 @@ func BenchmarkProjsProdY(b *testing.B) {
 }
 
 func BenchmarkProjsProd(b *testing.B) {
-	text, err := ioutil.ReadFile("./prods/projects.prod")
+	prodfile := "./prods/projects.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	out := 0
 	for i := 0; i < b.N; i++ {
+		scope = scope.RebuildContext()
 		out += len(EvalForms("root", scope, nterms["s"]).(string))
 	}
 	b.SetBytes(int64(float64(out) / float64(b.N)))
@@ -310,20 +357,23 @@ func BenchmarkJSONProdY(b *testing.B) {
 }
 
 func BenchmarkJSONProd(b *testing.B) {
-	text, err := ioutil.ReadFile("./prods/projects.prod")
+	prodfile := "./prods/projects.prod"
+	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		b.Fatal(err)
 	}
+	seed := uint64(time.Now().UnixNano())
+
 	s := parsec.NewScanner(text)
 	root, _ := Y(s)
 	scope := root.(common.Scope)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	scope = BuildContext(scope, uint64(time.Now().UnixNano()), "./bags")
-	scope = scope.ApplyGlobalForms()
+	scope = BuildContext(scope, seed, "./bags", prodfile)
 
 	b.ResetTimer()
 	out := 0
 	for i := 0; i < b.N; i++ {
+		scope = scope.RebuildContext()
 		out += len(EvalForms("root", scope, nterms["s"]).(string))
 	}
 	b.SetBytes(int64(float64(out) / float64(b.N)))

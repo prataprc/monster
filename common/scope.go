@@ -8,7 +8,12 @@ import "github.com/prataprc/goparsec"
 
 var _ = fmt.Sprintf("dummy")
 
-// Scope type
+// Scope of production grammar, a scope can be evaluated to
+// generate permutations and combinations. For the first
+// time after compiling the production grammar into a scope,
+// BuildContext() shall be called on the scope before evaluating
+// it. Mutiple evaluation on the same scope is possible after
+// calling the RebuildContext() on the scope.
 type Scope map[string]interface{}
 
 // NewScopeFromRoot will create a new scope from root non-terminal.
@@ -20,10 +25,23 @@ func NewScopeFromRoot(ns []parsec.ParsecNode) Scope {
 	scope := Scope{
 		"_globalForms":  ns[0].([]*Form),
 		"_nonterminals": ns[1].(NTForms),
-		"_weights":      make(map[string]float64),
-		"_globals":      make(Scope),
+		"_weights":      make(map[string]float64), // will be initialized with rebuild
+		"_globals":      globals,                  // will be initialized with rebuild
 	}
 	return scope
+}
+
+// RebuildContext to evaluate same generation tree multiple times.
+func (scope Scope) RebuildContext() Scope {
+	newscope := scope.Clone()
+	globals := scope["_globals"].(Scope)
+	newscope["_weights"] = make(map[string]float64)
+	newscope["_globals"] = Scope{
+		"_bagdir":   globals["_bagdir"],
+		"_prodfile": globals["_prodfile"],
+		"_random":   globals["_random"],
+	}
+	return newscope.applyGlobalForms()
 }
 
 // SetBagdir will set the bag-dir to be used by `bag` form.
@@ -147,23 +165,13 @@ func (scope Scope) Clone() Scope {
 	return newS
 }
 
-// ApplyGlobalForms on scope.
-func (scope Scope) ApplyGlobalForms() Scope {
-	newscope := scope.Clone()
-	for _, form := range scope["_globalForms"].([]*Form) {
-		form.Eval(newscope)
-	}
-	return newscope
-}
+//----------------
+// local functions
+//----------------
 
-// FormDuplicates will verify conflicts between user provided form-names
-// and builtin form-names.
-func (scope Scope) FormDuplicates(builtins map[string]*Form) []string {
-	duplicates := make([]string, 0, 4)
-	for name := range scope["_nonterminals"].(NTForms) {
-		if _, ok := builtins[name]; ok {
-			duplicates = append(duplicates, name)
-		}
+func (scope Scope) applyGlobalForms() Scope {
+	for _, form := range scope["_globalForms"].([]*Form) {
+		form.Eval(scope)
 	}
-	return duplicates
+	return scope
 }

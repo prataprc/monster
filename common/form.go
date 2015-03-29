@@ -51,3 +51,7 @@ func (form *Form) SetDefaultWeight(weight float64) {
 func (form *Form) Eval(scope Scope, args ...interface{}) interface{} {
 	return form.Fn(scope, args...)
 }
+
+func (form *Form) String() string {
+	return fmt.Sprintf("%s {%v, %v}", form.Name, form.Weight, form.Restrain)
+}

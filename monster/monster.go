@@ -68,13 +68,13 @@ func main() {
 		log.Fatal(err)
 	}
 	// compile
-	root := compile(parsec.NewScanner(text))
-	scope := root.(common.Scope)
+	root := compile(parsec.NewScanner(text)).(common.Scope)
+	seed, bagdir, prodfile := uint64(options.seed), options.bagdir, prodfile
+	scope := monster.BuildContext(root, seed, bagdir, prodfile)
 	nterms := scope["_nonterminals"].(common.NTForms)
 	if options.nonterm != "" {
 		for i := 0; i < options.count; i++ {
-			scope = monster.BuildContext(scope, uint64(i), options.bagdir)
-			scope["_prodfile"] = prodfile
+			scope = scope.RebuildContext()
 			val := evaluate("root", scope, nterms[options.nonterm])
 			outtext := fmt.Sprintf("%v\n", val)
 			if _, err := outfd.Write([]byte(outtext)); err != nil {
@@ -85,8 +85,7 @@ func main() {
 	} else {
 		// evaluate
 		for i := 0; i < options.count; i++ {
-			scope = monster.BuildContext(scope, uint64(i), options.bagdir)
-			scope["_prodfile"] = prodfile
+			scope = scope.RebuildContext()
 			val := evaluate("root", scope, nterms["s"])
 			outtext := fmt.Sprintf("%v\n", val)
 			if _, err := outfd.Write([]byte(outtext)); err != nil {
@@ -112,6 +111,5 @@ func evaluate(name string, scope common.Scope, forms []*common.Form) interface{}
 			log.Printf("%v", r)
 		}
 	}()
-	scope = scope.ApplyGlobalForms()
 	return monster.EvalForms(name, scope, forms)
 }
