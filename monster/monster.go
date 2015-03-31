@@ -8,6 +8,8 @@ import "log"
 import "os"
 import "time"
 import "io/ioutil"
+import _ "net/http/pprof"
+import "net/http"
 
 import "github.com/prataprc/goparsec"
 import "github.com/prataprc/monster"
@@ -19,6 +21,7 @@ var options struct {
 	nonterm string
 	seed    int
 	count   int
+	par     int
 	help    bool
 	debug   bool
 }
@@ -27,12 +30,14 @@ func argParse() (string, *os.File) {
 	seed := time.Now().UTC().Second()
 	flag.StringVar(&options.bagdir, "bagdir", "",
 		"directory path containing bags")
-	flag.StringVar(&options.nonterm, "nonterm", "",
+	flag.StringVar(&options.nonterm, "nonterm", "s",
 		"evaluate the non-terminal")
 	flag.IntVar(&options.seed, "seed", seed,
 		"seed value")
-	flag.IntVar(&options.count, "n", 1,
-		"generate n combinations")
+	flag.IntVar(&options.count, "count", 1,
+		"generate count number of combinations")
+	flag.IntVar(&options.par, "par", 1,
+		"number of parallel routines to use to generate")
 	flag.StringVar(&options.outfile, "o", "-",
 		"specify an output file")
 	flag.Parse()
@@ -62,36 +67,44 @@ func usage() {
 func main() {
 	prodfile, outfd := argParse()
 
+	// start pprof
+	go func() { log.Println(http.ListenAndServe("localhost:6060", nil)) }()
+
 	// read production-file
 	text, err := ioutil.ReadFile(prodfile)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// spawn generators
+	outch := make(chan []byte, 1000)
+	for i := 0; i < options.par; i++ {
+		go generate(text, options.count, prodfile, outch)
+	}
+
+	// gather generated values
+	till := options.count * options.par
+	for till > 0 {
+		outtext := <-outch
+		outtext = append(outtext, '\n')
+		if _, err := outfd.Write([]byte(outtext)); err != nil {
+			log.Fatal(err)
+		}
+		till--
+	}
+	fmt.Println("Completed !!")
+}
+
+func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 	// compile
 	root := compile(parsec.NewScanner(text)).(common.Scope)
 	seed, bagdir, prodfile := uint64(options.seed), options.bagdir, prodfile
 	scope := monster.BuildContext(root, seed, bagdir, prodfile)
 	nterms := scope["_nonterminals"].(common.NTForms)
-	if options.nonterm != "" {
-		for i := 0; i < options.count; i++ {
-			scope = scope.RebuildContext()
-			val := evaluate("root", scope, nterms[options.nonterm])
-			outtext := fmt.Sprintf("%v\n", val)
-			if _, err := outfd.Write([]byte(outtext)); err != nil {
-				log.Fatal(err)
-			}
-		}
-
-	} else {
-		// evaluate
-		for i := 0; i < options.count; i++ {
-			scope = scope.RebuildContext()
-			val := evaluate("root", scope, nterms["s"])
-			outtext := fmt.Sprintf("%v\n", val)
-			if _, err := outfd.Write([]byte(outtext)); err != nil {
-				log.Fatal(err)
-			}
-		}
+	for i := 0; i < count; i++ {
+		scope = scope.RebuildContext()
+		val := evaluate("root", scope, nterms[options.nonterm])
+		outch <- []byte(val.(string))
 	}
 }
 
