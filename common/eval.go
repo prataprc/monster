@@ -4,6 +4,7 @@ package common
 
 import "fmt"
 import "strconv"
+import "math"
 
 var _ = fmt.Sprintf("dummy")
 
@@ -17,10 +18,12 @@ func EvalForms(name string, scope Scope, forms []*Form) interface{} {
 	rnd := scope.GetRandom()
 	lookup, failed := make([]bool, len(forms)), 0
 	maxWeigh := maxWeighsOfForms(name, scope, forms)
+	//fmt.Println()
 	for failed < len(forms) {
-		f := float64(rnd.Int31n(maxWeigh)) / float64(0x7FFFFFFF)
+		f := rnd.Float64() * maxWeigh
 		for i, form := range forms {
 			weight := currWeight(name, i, scope, form)
+			//fmt.Println(name, i, maxWeigh, f, weight, f <= weight, weight <= 0.0)
 			if weight <= 0.0 {
 				failed++
 
@@ -53,18 +56,22 @@ func decWeight(name string, i int, scope Scope, form *Form) Scope {
 	if w, ok := scope.GetWeight(nm); ok {
 		weight = w
 	}
-	scope.SetWeight(nm, weight-form.Restrain)
+	if weight -= form.Restrain; weight <= 0 {
+		weight = 0
+	}
+	scope.SetWeight(nm, weight)
 	return scope
 }
 
-func maxWeighsOfForms(name string, scope Scope, forms []*Form) int32 {
-	max := int32(0)
+func maxWeighsOfForms(name string, scope Scope, forms []*Form) float64 {
+	max := math.Inf(-1)
 	for i, form := range forms {
 		weight := currWeight(name, i, scope, form)
-		x := int32(weight * float64(0x7FFFFFFF))
-		if x > max {
-			max = x
+		//fmt.Println(i, weight, x)
+		if weight > max {
+			max = weight
 		}
 	}
+	//fmt.Println(max)
 	return max
 }
