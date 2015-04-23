@@ -34,8 +34,8 @@ func NewScopeFromRoot(ns []parsec.ParsecNode) Scope {
 // RebuildContext to evaluate same generation tree multiple times.
 func (scope Scope) RebuildContext() Scope {
 	newscope := scope.Clone()
-	globals := scope["_globals"].(Scope)
 	newscope["_weights"] = make(map[string]float64)
+	globals := scope["_globals"].(Scope)
 	newscope["_globals"] = Scope{
 		"_bagdir":   globals["_bagdir"],
 		"_prodfile": globals["_prodfile"],

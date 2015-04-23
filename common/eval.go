@@ -30,7 +30,7 @@ func EvalForms(name string, scope Scope, forms []*Form) interface{} {
 			} else if lookup[i] == false && f <= weight {
 				lookup[i] = true
 				scope = decWeight(name, i, scope, form) // weight restrainer
-				val := form.Eval(scope.Clone())
+				val := form.Eval(scope)
 				if val == nil {
 					failed++
 					continue
@@ -40,6 +40,24 @@ func EvalForms(name string, scope Scope, forms []*Form) interface{} {
 		}
 	}
 	return nil
+}
+
+// TODO: not used now.
+var cacheWeightName = make(map[string]map[int]string)
+
+func cachedWeightOp(name string, i int) string {
+	// cached operation to reduce GC load.
+	m, ok := cacheWeightName[name]
+	if !ok {
+		m = make(map[int]string)
+	}
+	nm, ok := m[i]
+	if !ok {
+		nm = name + strconv.Itoa(i)
+		m[i] = nm
+	}
+	cacheWeightName[name] = m
+	return nm
 }
 
 func currWeight(name string, i int, scope Scope, form *Form) float64 {

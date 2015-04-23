@@ -10,6 +10,7 @@ import "time"
 import "io/ioutil"
 import _ "net/http/pprof"
 import "net/http"
+import "runtime/pprof"
 
 import "github.com/prataprc/goparsec"
 import "github.com/prataprc/monster"
@@ -19,6 +20,7 @@ var options struct {
 	bagdir  string
 	outfile string
 	nonterm string
+	memprof string
 	seed    int
 	count   int
 	par     int
@@ -32,6 +34,8 @@ func argParse() (string, *os.File) {
 		"directory path containing bags")
 	flag.StringVar(&options.nonterm, "nonterm", "s",
 		"evaluate the non-terminal")
+	flag.StringVar(&options.memprof, "memprof", "",
+		"dump mem-profile to file")
 	flag.IntVar(&options.seed, "seed", seed,
 		"seed value")
 	flag.IntVar(&options.count, "count", 1,
@@ -93,6 +97,9 @@ func main() {
 		till--
 	}
 	fmt.Println("Completed !!")
+	if takeMEMProfile(options.memprof) {
+		fmt.Printf("dumped mem-profile to %v\n", options.memprof)
+	}
 }
 
 func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
@@ -125,4 +132,18 @@ func evaluate(name string, scope common.Scope, forms []*common.Form) interface{}
 		}
 	}()
 	return monster.EvalForms(name, scope, forms)
+}
+
+func takeMEMProfile(filename string) bool {
+	if filename == "" {
+		return false
+	}
+	fd, err := os.Create(filename)
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+	pprof.WriteHeapProfile(fd)
+	defer fd.Close()
+	return true
 }

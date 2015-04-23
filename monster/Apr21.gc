@@ -1,0 +1,33 @@
+Total no. of GC        : 139668
+Total gc time          : 67244690 us
+Total garbage colltd   : 69821 MB
+Max/min stop-word-time :    14 /     0 (us)
+Max/min sweep-time     :   595 /     0 (us)
+Max/min mark-time      :  1062 /    39 (us)
+Max/min wait-on-worker :    74 /     0 (us)
+Max/min gc-time        :  1425 /    44 (us)
+Max/min garbage colltd :     1 /     0 (us)
+
+                 stopw      sweep      mark       waitwrk    cummulative
+average        : 0          87         394        0          481       
+median         : 0          0          39         0          44        
+std-deviation  : 0.43470629 87.87933542 34.55547640 0.24883381 84.61676417
+
+                 garbage-collected(MB)
+average        : 0          
+median         : 0          
+std-deviation  : 0.707040962 
+
+Histogram for    stopw      sweeps     marks      waitwrks    full-gc
+    <     0 us : 120693     69416      0          138879     0         
+    <    64 us : 18975      423        3          788        2         
+    <   128 us : 0          9          3          1          4         
+    <   256 us : 0          69166      15         0          9         
+    <   512 us : 0          653        137238     0          69540     
+    <  1024 us : 0          1          2407       0          70105     
+    <  2048 us : 0          0          2          0          8         
+
+
+Histogram for garbage collected
+    <     0 MB : 69847     
+    <     1 MB : 69821     

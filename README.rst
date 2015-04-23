@@ -53,3 +53,16 @@ The grammar can be invoked via command line like,
 
 use `-n` switch to generate as many document as needed, documents will be output
 to stdout by default, to redirect them to a file use `-o` switch.
+
+different commands to debug monster,
+
+.. code-block:: bash
+
+    // To generate GCTRACE.
+    GCDEBUG=gctrace=2 go run monster/monster.go -bagdir bags -count 1000000 -o o prods/users.prod
+
+    // To generate mem-profile.
+    go run monster/monster.go -bagdir bags -count 1000000 -memprof apr21.1.mprof -o o prods/users.prod
+
+    // To analyse alloc-space.
+    go tool pprof --svg --alloc_space monster/monster apr21.1.mprof > apr21.1.mprof.alloc.svg
