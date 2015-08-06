@@ -13,7 +13,8 @@ func Rangef(scope common.Scope, args ...interface{}) interface{} {
 	rnd := scope.GetRandom()
 	if len(args) == 2 {
 		min, max := args[0].(float64), args[1].(float64)
-		return rnd.Float64()*min + (max - min)
+		f := (rnd.Float64() * (max - min)) + min
+		return f
 
 	} else if len(args) == 1 {
 		max := args[0].(float64)
