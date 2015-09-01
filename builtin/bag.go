@@ -59,5 +59,6 @@ func readBag(filename string) [][]string {
 	if err == nil {
 		return records
 	}
-	panic(fmt.Errorf("unable to read file %v in CSV format\n", filename))
+	fmsg := "unable to read file %q in CSV format: %v\n"
+	panic(fmt.Errorf(fmsg, filename, err))
 }
