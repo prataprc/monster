@@ -2,6 +2,7 @@
 
 package main
 
+import "encoding/json"
 import "flag"
 import "fmt"
 import "log"
@@ -111,7 +112,15 @@ func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 	for i := 0; i < count; i++ {
 		scope = scope.RebuildContext()
 		val := evaluate("root", scope, nterms[options.nonterm])
-		outch <- []byte(val.(string))
+
+		// Verify the validity of JSON generated
+		var value map[string]interface{}
+		err := json.Unmarshal([]byte(val.(string)), &value)
+		if err != nil {
+			log.Printf("Invalid JSON %v\n", err)
+		} else {
+			outch <- []byte(val.(string))
+		}
 	}
 }
 
