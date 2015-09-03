@@ -1,0 +1,23 @@
+s : "{ " properties "}".
+
+properties  : DQ "type"     DQ ": " DQ "project" DQ ", " NL
+              DQ "name"     DQ ": " DQ projectname DQ ", " NL
+              DQ "language" DQ ": " DQ language DQ NL
+              DQ "field1" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field2" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field3" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field4" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field5" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field6" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field7" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field8" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field9" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field10" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field11" DQ ": " DQ (bag "./lines") DQ NL
+              DQ "field12" DQ ": " DQ (bag "./lines") DQ NL.
+
+projectname : (bag "./propernames").
+language    : "python"
+            | "haskell"
+            | "lua"
+            | "golang".
