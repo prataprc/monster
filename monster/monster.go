@@ -2,6 +2,7 @@
 
 package main
 
+import "encoding/json"
 import "flag"
 import "fmt"
 import "log"
@@ -25,6 +26,7 @@ var options struct {
 	count   int
 	par     int
 	help    bool
+	json    bool
 	debug   bool
 }
 
@@ -44,6 +46,8 @@ func argParse() (string, *os.File) {
 		"number of parallel routines to use to generate")
 	flag.StringVar(&options.outfile, "o", "-",
 		"specify an output file")
+	flag.BoolVar(&options.json, "json", false,
+		"type of data to generate - json or string")
 	flag.Parse()
 
 	prodfile := flag.Args()[0]
@@ -108,6 +112,34 @@ func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 	seed, bagdir, prodfile := uint64(options.seed), options.bagdir, prodfile
 	scope := monster.BuildContext(root, seed, bagdir, prodfile)
 	nterms := scope["_nonterminals"].(common.NTForms)
+
+	// verify the sanity of json generated from production file
+	var value map[string]interface{}
+	if options.json {
+<<<<<<< HEAD
+		scope = scope.RebuildContext()
+		val := evaluate("root", scope, nterms[options.nonterm])
+		if err := json.Unmarshal([]byte(val.(string)), &value); err != nil {
+			log.Printf("Invalid JSON %v\n", err)
+			os.Exit(1)
+		} else {
+			outch <- []byte(val.(string))
+		}
+	}
+
+	for i := 0; i < count; i++ {
+=======
+>>>>>>> acbd395d2c0dfbee05855b853ae02015f67f209c
+		scope = scope.RebuildContext()
+		val := evaluate("root", scope, nterms[options.nonterm])
+		if err := json.Unmarshal([]byte(val.(string)), &value); err != nil {
+			log.Printf("Invalid JSON %v\n", err)
+			os.Exit(1)
+		} else {
+			outch <- []byte(val.(string))
+		}
+	}
+
 	for i := 0; i < count; i++ {
 		scope = scope.RebuildContext()
 		val := evaluate("root", scope, nterms[options.nonterm])
