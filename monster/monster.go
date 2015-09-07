@@ -116,25 +116,10 @@ func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 	// verify the sanity of json generated from production file
 	var value map[string]interface{}
 	if options.json {
-<<<<<<< HEAD
 		scope = scope.RebuildContext()
 		val := evaluate("root", scope, nterms[options.nonterm])
 		if err := json.Unmarshal([]byte(val.(string)), &value); err != nil {
-			log.Printf("Invalid JSON %v\n", err)
-			os.Exit(1)
-		} else {
-			outch <- []byte(val.(string))
-		}
-	}
-
-	for i := 0; i < count; i++ {
-=======
->>>>>>> acbd395d2c0dfbee05855b853ae02015f67f209c
-		scope = scope.RebuildContext()
-		val := evaluate("root", scope, nterms[options.nonterm])
-		if err := json.Unmarshal([]byte(val.(string)), &value); err != nil {
-			log.Printf("Invalid JSON %v\n", err)
-			os.Exit(1)
+			log.Fatalf("Invalid JSON %v\n", err)
 		} else {
 			outch <- []byte(val.(string))
 		}
