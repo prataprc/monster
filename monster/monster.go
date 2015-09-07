@@ -8,6 +8,8 @@ import "fmt"
 import "log"
 import "os"
 import "time"
+import "unsafe"
+import "reflect"
 import "io/ioutil"
 import _ "net/http/pprof"
 import "net/http"
@@ -115,20 +117,17 @@ func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 
 	// verify the sanity of json generated from production file
 	var value map[string]interface{}
-	if options.json {
-		scope = scope.RebuildContext()
-		val := evaluate("root", scope, nterms[options.nonterm])
-		if err := json.Unmarshal([]byte(val.(string)), &value); err != nil {
-			log.Fatalf("Invalid JSON %v\n", err)
-		} else {
-			outch <- []byte(val.(string))
-		}
-	}
-
+	nonterm := options.nonterm
 	for i := 0; i < count; i++ {
 		scope = scope.RebuildContext()
-		val := evaluate("root", scope, nterms[options.nonterm])
-		outch <- []byte(val.(string))
+		val := []byte(evaluate("root", scope, nterms[nonterm]).(string))
+		if !options.json {
+			outch <- val
+		} else if err := json.Unmarshal(val, &value); err == nil {
+			outch <- val
+		} else {
+			log.Fatalf("Invalid JSON %v\n", err)
+		}
 	}
 }
 
@@ -163,4 +162,13 @@ func takeMEMProfile(filename string) bool {
 	pprof.WriteHeapProfile(fd)
 	defer fd.Close()
 	return true
+}
+
+func str2bytes(str string) []byte {
+	if str == "" {
+		return nil
+	}
+	st := (*reflect.StringHeader)(unsafe.Pointer(&str))
+	sl := &reflect.SliceHeader{Data: st.Data, Len: st.Len, Cap: st.Len}
+	return *(*[]byte)(unsafe.Pointer(sl))
 }
