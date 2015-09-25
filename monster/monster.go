@@ -9,6 +9,8 @@ import "log"
 import "os"
 import "time"
 import "unsafe"
+import "math/rand"
+import "strings"
 import "reflect"
 import "io/ioutil"
 import _ "net/http/pprof"
@@ -20,24 +22,26 @@ import "github.com/prataprc/monster"
 import "github.com/prataprc/monster/common"
 
 var options struct {
-	bagdir  string
-	outfile string
-	nonterm string
-	memprof string
-	seed    int
-	count   int
-	par     int
-	help    bool
-	json    bool
-	debug   bool
+	bagdir   string
+	outfile  string
+	nonterms []string
+	memprof  string
+	seed     int
+	count    int
+	par      int
+	help     bool
+	json     bool
+	debug    bool
 }
 
 func argParse() (string, *os.File) {
+	var nonterms string
+
 	seed := time.Now().UTC().Second()
 	flag.StringVar(&options.bagdir, "bagdir", "",
 		"directory path containing bags")
-	flag.StringVar(&options.nonterm, "nonterm", "s",
-		"evaluate the non-terminal")
+	flag.StringVar(&nonterms, "nonterms", "s",
+		"comma seperated list of non-terminals to pick one of them as root")
 	flag.StringVar(&options.memprof, "memprof", "",
 		"dump mem-profile to file")
 	flag.IntVar(&options.seed, "seed", seed,
@@ -57,6 +61,7 @@ func argParse() (string, *os.File) {
 		usage()
 		os.Exit(1)
 	}
+	options.nonterms = strings.Split(nonterms, ",")
 
 	var err error
 	outfd := os.Stdout
@@ -117,8 +122,9 @@ func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 
 	// verify the sanity of json generated from production file
 	var value map[string]interface{}
-	nonterm := options.nonterm
+	rnd := rand.New(rand.NewSource(int64(seed)))
 	for i := 0; i < count; i++ {
+		nonterm := options.nonterms[rnd.Intn(len(options.nonterms))]
 		scope = scope.RebuildContext()
 		val := []byte(evaluate("root", scope, nterms[nonterm]).(string))
 		if !options.json {
