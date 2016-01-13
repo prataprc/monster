@@ -8,7 +8,7 @@ properties  : DQ "type"     DQ ": " DQ "project" DQ ", " NL
 projectname : (bag "./propernames").
 members     : DQ (bag "./propernames") DQ
             | members "," DQ (bag "./propernames") DQ.
-language    : "python"
+language    : "golang"
+            | "python"
             | "haskell"
-            | "lua"
-            | "golang".
+            | "lua".
