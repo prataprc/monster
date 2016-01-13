@@ -441,6 +441,8 @@ func initBuiltins() {
 	builtins["global"] = common.NewForm("global", builtin.Global)
 	builtins["weigh"] = common.NewForm("weigh", builtin.Weigh)
 	builtins["bag"] = common.NewForm("bag", builtin.Bag)
+	builtins["unixnano"] = common.NewForm("unixnano", builtin.UnixNano)
+	builtins["multf"] = common.NewForm("multf", builtin.Multf)
 	builtins["range"] = common.NewForm("range", builtin.Range)
 	builtins["rangef"] = common.NewForm("rangef", builtin.Rangef)
 	builtins["ranget"] = common.NewForm("ranget", builtin.Ranget)
