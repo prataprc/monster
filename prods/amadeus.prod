@@ -1,0 +1,56 @@
+s : "{ " properties "}".
+
+properties: version ", "
+            reservationid ", "
+            lastcommittedsn ", "
+            nextavailablesn ", "
+            chaincode ", "
+            confirmationnumber ", "
+            cancellationnumber ", "
+            lastcommittedcancellationnumber ", "
+            lock ", "
+            meta ", "
+            pendingimage ", "
+            admindata ", "
+            criteriaforsearch.
+
+version: "\"version\": " "\"V0.1\"".
+reservationid: "\"reservation_id\": " (uuid).
+lastcommittedsn: "\"last_committed_sn\": 79".
+nextavailablesn: "\"next_available_sn\": 1".
+chaincode: "\"chain_code\": " (chr (range 65 91)) (chr (range 65 91)) (chr (range 65 91)).
+confirmationnumber: "\"confirmation_number\": \"OVlqKDXC\"".
+cancellationnumber: "\"cancellation_number\": \"C5xt5UTq\"".
+lastcommittedcancellationnumber: "\"last_committed_cancellation_number\": \"cH8hAAnY\"".
+lock: "\"lock\": null".
+
+meta: "\"meta\" : { "
+          "\"document_type\": \"root_document\", "
+          "\"last_modification_time\": \"2015-07-25\", "
+          "\"data_center\": \"HDP cluster\", "
+          "\"system\": \"hri::storage C++ MDW\", "
+          "\"tags\": { \"mdw_version\": \"Prototype\" } "
+          "}".
+
+pendingimage: "\"pending_image\": { "
+                   "\"control_data\": { \"sequence_number\": 91 },"
+                   "\"image\": { \"resa\": \"Xrtpvxokbbqyvrk\" }"
+                   "}".
+
+admindata: "\"admin_data\": { \"admin\": \"Ynjpn\" }".
+
+criteriaforsearch: "\"criteria_for_search\": {"
+                            "\"creation_time\": \"2013-02-17\","
+                            "\"modification_time\": \"2013-05-04\","
+                            "\"checkInDates\": [ \"2016-08-04\", \"2016-04-18\", \"2016-03-28\", \"2017-06-11\" ],"
+                            "\"checkOutDates\": [ \"2016-08-21\", \"2017-04-04\", \"2017-02-11\", \"2018-04-06\" ],"
+                            "\"optionDate\": \"2017-06-20\","
+                            "\"guestsLastName\": [ \"Byhqljrciqutxvh\", \"Owpuaels\", \"Wcthgdifl\", \"Rwvv\" ],"
+                            "\"groupName\": null,"
+                            "\"profileIds\": [ \"626811\", \"731018\", \"425720\", \"817471\" ],"
+                            "\"loyaltyMembershiIds\": [ \"MAQl5dpT\", \"wSZpj6Fh\", \"LSNPo3BP\", \"ARhZ5IPR\" ],"
+                            "\"pnrNumber\": \"5IGBPQ\""
+                          "}".
+
+
+

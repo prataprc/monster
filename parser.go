@@ -448,6 +448,7 @@ func initBuiltins() {
 	builtins["ranget"] = common.NewForm("ranget", builtin.Ranget)
 	builtins["choice"] = common.NewForm("choice", builtin.Choice)
 	builtins["uuid"] = common.NewForm("uuid", builtin.Uuid)
+	builtins["chr"] = common.NewForm("chr", builtin.Chr)
 	builtins["inc"] = common.NewForm("inc", builtin.Inc)
 	builtins["dec"] = common.NewForm("dec", builtin.Dec)
 	builtins["len"] = common.NewForm("len", builtin.Len)
