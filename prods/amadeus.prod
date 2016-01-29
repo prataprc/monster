@@ -18,7 +18,7 @@ version: "\"version\": " "\"V0.1\"".
 reservationid: "\"reservation_id\": " (uuid).
 lastcommittedsn: "\"last_committed_sn\": 79".
 nextavailablesn: "\"next_available_sn\": 1".
-chaincode: "\"chain_code\": " (chr (range 65 91)) (chr (range 65 91)) (chr (range 65 91)).
+chaincode: "\"chain_code\": \"" (chr (range 65 91)) (chr (range 65 91)) (chr (range 65 91)) DQ.
 confirmationnumber: "\"confirmation_number\": \"OVlqKDXC\"".
 cancellationnumber: "\"cancellation_number\": \"C5xt5UTq\"".
 lastcommittedcancellationnumber: "\"last_committed_cancellation_number\": \"cH8hAAnY\"".
