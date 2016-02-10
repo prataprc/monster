@@ -39,18 +39,47 @@ pendingimage: "\"pending_image\": { "
 
 admindata: "\"admin_data\": { \"admin\": \"Ynjpn\" }".
 
-criteriaforsearch: "\"criteria_for_search\": {"
-                            "\"creation_time\": \"2013-02-17\","
-                            "\"modification_time\": \"2013-05-04\","
-                            "\"checkInDates\": [ \"2016-08-04\", \"2016-04-18\", \"2016-03-28\", \"2017-06-11\" ],"
-                            "\"checkOutDates\": [ \"2016-08-21\", \"2017-04-04\", \"2017-02-11\", \"2018-04-06\" ],"
-                            "\"optionDate\": \"2017-06-20\","
-                            "\"guestsLastName\": [ \"Byhqljrciqutxvh\", \"Owpuaels\", \"Wcthgdifl\", \"Rwvv\" ],"
-                            "\"groupName\": null,"
-                            "\"profileIds\": [ \"626811\", \"731018\", \"425720\", \"817471\" ],"
-                            "\"loyaltyMembershiIds\": [ \"MAQl5dpT\", \"wSZpj6Fh\", \"LSNPo3BP\", \"ARhZ5IPR\" ],"
-                            "\"pnrNumber\": \"5IGBPQ\""
-                          "}".
+criteriaforsearch: "\"criteria_for_search\":"
+                   "{" creationtime
+                       modificationtime
+                       checkindates
+                       checkoutdates
+                       guestslastname
+                       groupname
+                       profileids
+                       optiondate
+                       pnrnumber
+                    " }".
 
+creationtime: "\"creation_time\":" DQ ctime DQ ", ".
+modificationtime: "\"modification_time\":"  DQ mtime DQ ", ".
+checkindates: "\"checkInDates\":" checkindatesval ", ".
+checkoutdates: "\"checkOutDates\":" checkoutdatesval ", ".
 
+checkindatesval: "["
+    DQ (ranget $ctime $mtime) DQ ", "
+    DQ (ranget $ctime $mtime) DQ ", "
+    DQ (ranget $ctime $mtime) DQ ", "
+    DQ (ranget $ctime $mtime) DQ "]".
+checkoutdatesval: "["
+    DQ (ranget $ctime $mtime) DQ ", "
+    DQ (ranget $ctime $mtime) DQ ", "
+    DQ (ranget $ctime $mtime) DQ ", "
+    DQ (ranget $ctime $mtime) DQ "]".
 
+optiondate: "\"optionDate\":" DQ (ranget $ctime "2013-01-02T15:04:05Z") DQ ", ".
+guestslastname: "\"guestsLastName\":"
+        "[" DQ (bag "./propernames") DQ ", "
+            DQ (bag "./propernames") DQ ", "
+            DQ (bag "./propernames") DQ ", "
+            DQ (bag "./propernames") DQ "]" ", ".
+groupname: "\"groupName\":" DQ (bag "./propernames") DQ ", ".
+profileids: "\"profileIds\":"
+        "[" (range 100000 999999) ", "
+            (range 100000 999999) ", "
+            (range 100000 999999) ", "
+            (range 100000 999999) "]" ", ".
+pnrnumber: "\"pnrNumber\":" DQ (range 100 999) "-" (range 10000 99999) DQ.
+
+ctime : (ranget "2003-01-02T15:04:05Z" "2013-01-02T15:04:05Z").
+mtime : (ranget $ctime "2013-01-02T15:04:05Z").
