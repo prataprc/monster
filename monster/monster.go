@@ -2,6 +2,7 @@
 
 package main
 
+import "bytes"
 import "encoding/json"
 import "flag"
 import "fmt"
@@ -16,6 +17,7 @@ import "io/ioutil"
 import _ "net/http/pprof"
 import "net/http"
 import "runtime/pprof"
+import "runtime/debug"
 
 import "github.com/prataprc/goparsec"
 import "github.com/prataprc/monster"
@@ -86,7 +88,7 @@ func main() {
 	prodfile, outfd := argParse()
 
 	// start pprof
-	go func() { log.Println(http.ListenAndServe("localhost:6060", nil)) }()
+	go func() { log.Println(http.ListenAndServe("localhost:6061", nil)) }()
 
 	// read production-file
 	text, err := ioutil.ReadFile(prodfile)
@@ -154,7 +156,8 @@ func generate(text []byte, count int, prodfile string, outch chan<- []byte) {
 func compile(s parsec.Scanner) parsec.ParsecNode {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("%v at %v", r, s.GetCursor())
+			log.Printf("%v at %v\n", r, s.GetCursor())
+			fmt.Printf("%v\n", getStackTrace(2, debug.Stack()))
 		}
 	}()
 	root, _ := monster.Y(s)
@@ -191,4 +194,13 @@ func str2bytes(str string) []byte {
 	st := (*reflect.StringHeader)(unsafe.Pointer(&str))
 	sl := &reflect.SliceHeader{Data: st.Data, Len: st.Len, Cap: st.Len}
 	return *(*[]byte)(unsafe.Pointer(sl))
+}
+
+func getStackTrace(skip int, stack []byte) string {
+	var buf bytes.Buffer
+	lines := strings.Split(string(stack), "\n")
+	for _, call := range lines[skip*2:] {
+		buf.WriteString(fmt.Sprintf("%s\n", call))
+	}
+	return buf.String()
 }

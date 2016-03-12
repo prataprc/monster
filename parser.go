@@ -272,13 +272,14 @@ func ruletokNode(ns []parsec.ParsecNode) parsec.ParsecNode {
 			return termNode(n)
 		case "REF":
 			return refNode(n)
+		case "STRING":
+			str := n.Value[1 : len(n.Value)-1]
+			return common.NewForm(
+				"##string",
+				func(_ common.Scope, _ ...interface{}) interface{} { return str })
+		default:
+			panic(fmt.Errorf("unknown terminal name %v\n", n.Name))
 		}
-
-	case string:
-		str := n[1 : len(n)-1]
-		return common.NewForm(
-			"##string",
-			func(_ common.Scope, _ ...interface{}) interface{} { return str })
 
 	case *common.Form:
 		return n
