@@ -1,0 +1,136 @@
+(let guid (uuid))
+(let emailguid (uuid))
+(let fname (bag "./propernames"))
+(let lname (bag "./propernames"))
+(let country (bag "./countries"))
+(let localid (range 0 100000000))
+
+s : "{" properties "}".
+
+properties: accountlevel ",\n"
+            createdat ",\n"
+            activationat ",\n"
+            address ",\n"
+            admincountries ",\n"
+            adminpassword ",\n"
+            adminpasswordvaliduntil ",\n"
+            anonymousemailsentat ",\n"
+            avatar ",\n"
+            children ",\n"
+            coins ",\n"
+            defaultproduct ",\n"
+            dob ",\n"
+            email ",\n"
+            emailguid ",\n"
+            emailoptin ",\n"
+            firstname ",\n"
+            forgotpasswordguid ",\n"
+            forgotpasswordsentat ",\n"
+            goterms ",\n"
+            guid ",\n"
+            hasloggedin ",\n"
+            id ",\n"
+            key ",\n"
+            lastname ",\n"
+            lastsyncedat ",\n"
+            locale ",\n"
+            modifiedat ",\n"
+            motto ",\n"
+            opid ",\n"
+            parentemail ",\n"
+            parents ",\n"
+            password ",\n"
+            pglterms ",\n"
+            pgltermsemailsentat ",\n"
+            phone ",\n"
+            playpokemonterms ",\n"
+            playerid ",\n"
+            playerrankingsdisplay ",\n"
+            playerrankingsoptin ",\n"
+            prefpglfriends ",\n"
+            prefpglpublic ",\n"
+            prefpglxy ",\n"
+            publicprofileoptin ",\n"
+            screenname ",\n"
+            screennamestatus ",\n"
+            signuptheme ",\n"
+            socialpermissionpreferences ",\n"
+            state ",\n"
+            terms ",\n"
+            username ",\n"
+            verificationstatus ",\n"
+            underscoregroups ",\n"
+            groups ",\n".
+
+dobvalue : (ranget "1960-01-02T15:04:05Z" "1999-06-02T15:04:05Z").
+ctime : (ranget "2014-01-02T15:04:05Z" "2016-06-02T15:04:05Z").
+atime : (ranget "2014-01-02T15:04:05Z" "2016-06-02T15:04:05Z").
+stime : (ranget "2014-01-02T15:04:05Z" "2016-06-02T15:04:05Z").
+mtime : (ranget "2014-01-02T15:04:05Z" "2016-06-02T15:04:05Z").
+etime : (ranget "2014-01-02T15:04:05Z" "2016-06-02T15:04:05Z").
+pglemailtime: (ranget "2014-01-02T15:04:05Z" "2016-06-02T15:04:05Z").
+
+guid : "\"guid\": \"" $guid DQ.
+firstname: "\"first_name\": \"" $fname DQ.
+lastname: "\"last_name\": \"" $lname DQ.
+accountlevel: "\"account_level\" : " (range 1 10).
+createdat: "\"created_at\": \"" ctime DQ.
+activationat: "\"activation_at\": \"" atime DQ.
+address: "\"address\": {"
+    "\"address1\": " "\"No. " (range 0 999) ", " (range 0 99) "Avenue\"" ",\n"
+    "\"address2\": " DQ (range 0 12000) "Suite\"" ",\n"
+    "\"city\": " DQ (bag "./cities") DQ ",\n"
+    "\"contact\": " DQ $fname $lname DQ ",\n"
+    "\"country\": " DQ $country DQ ",\n"
+    "\"name\": " DQ (bag "./propernames") DQ ",\n"
+    "\"postal_code\": " (range 100000 999999) ",\n"
+    "\"state\": " DQ (bag "./usstates") DQ
+    "}".
+admincountries: "\"admin_countries\": [ \"*\" ]".
+adminpassword: "\"admin_password\": null".
+adminpasswordvaliduntil: "\"admin_password_valid_until\": null".
+anonymousemailsentat: "\"anonymous_email_sent_at\": \"" etime DQ.
+avatar: "\"avatar\": {\"small_image\": \"https://tpci-avatar-images-live.s3.amazonaws.com/temp/98/68/dd/72f47a92d680fa31c79c587124/small.png?cachebuster=1456332737\" }".
+children: "\"children\":[ " DQ "User::1847924::214testchild::US" DQ "]".
+coins: "\"coins\": " (range 0 10000).
+defaultproduct: "\"default_product\": \"" (bag "./propernames") DQ.
+dob: "\"dob\": \"" dobvalue DQ.
+email: "\"email\": \"" $fname "." $lname "@pokemon.com" DQ.
+emailguid: "\"email_guid\": " DQ $emailguid DQ.
+emailoptin: "\"email_opt_in\": " (choice "true" "false").
+forgotpasswordguid: "\"forgot_password_guid\": \"\"".
+forgotpasswordsentat: "\"forgot_password_sent_at\": null".
+goterms: "\"go_terms\": " (choice "true" "false").
+hasloggedin: "\"has_logged_in\": " (choice "true" "false").
+id: "\"id\": " $localid.
+key: "\"key\": \"User::" $localid "::" $lname "::" $country DQ.
+lastsyncedat: "\"last_synced_at\": \"" stime DQ.
+locale : "\"locale\": \"en\"".
+modifiedat: "\"modified_at\": \"" mtime DQ.
+motto: "\"motto\": \"\"".
+opid: "\"op_id\": " $localid.
+parentemail: "\"parent_email\": \"\"".
+parents: "\"parents\": []".
+password: "\"password\": \"\"".
+pglterms: "\"pgl_terms\": " (choice "true" "false").
+pgltermsemailsentat: "\"pgl_terms_email_sent_at\": \"" pglemailtime.
+phone: "\"phone\": \"" (range 100 999) "-" (range 100 999) "-" (range 1000 9999) DQ.
+playpokemonterms: "\"play_pokemon_terms\": " (choice "true" "false").
+playerid: "\"player_id\": " (range 10000 10000000000).
+playerrankingsdisplay: "\"player_rankings_display\": \"fnli\"".
+playerrankingsoptin: "\"player_rankings_opt_in\": " (choice "true" "false").
+prefpglfriends: "\"pref_pgl_friends\": " (range 1 9).
+prefpglpublic: "\"pref_pgl_public\": " (range 1 9).
+prefpglxy: "\"pref_pgl_xy\": " (range 1 9).
+publicprofileoptin: "\"public_profile_opt_in\": " (choice "true" "false").
+screenname: "\"screen_name\": " (bag "./propernames").
+screennamestatus: "\"screen_name_status\": \"approved\"".
+signuptheme: "\"signup_theme\": \"\"".
+socialpermissionpreferences: "\"social_permission_preferences\" { \"forums\" \"limited\", \"friend_chat_mode\" \"canned_chat\", \"friend_mode\" \"open\", \"friend_trade_mode\" \"like_for_like\", \"game_chat_mode\" \"no_chat\", \"private_messaging\" \"closed\", \"public_chat_mode\" \"no_chat\", \"shopping_mode\" \"restricted\", \"trade_mode\" \"like_for_like\" }".
+state: "\"state\": \"active\"".
+terms: "\"terms\": " (choice "true" "false").
+username: "\"username\": \"" $fname "." $lname DQ.
+verificationstatus: "\"verification_status\": " (range 1 9).
+
+underscoregroups: "\"_groups\": { \"admin\": { \"name\": \"User Administrator\", \"state\": \"\", \"type\": \"admin\" }, \"cards_admin\": { \"name\": \"Cards Admin\", \"state\": \"\", \"type\": \"cards_admin\" }, \"content_admin\": { \"name\": \"Content Admin\", \"state\": \"\", \"type\": \"content_admin\" }, \"developer\": { \"name\": \"Developer\", \"state\": \"\", \"type\": \"developer\" }, \"league_admin\": { \"name\": \"League Administrator\", \"state\": \"\", \"type\": \"league_admin\" }, \"organized_play\": { \"name\": \"Organized Play\", \"state\": \"normal\", \"type\": \"organized_play\" }, \"pcom\": { \"name\": \"Pokemon.com\", \"state\": \"\", \"type\": \"pcom\" }, \"pgl\": { \"name\": \"PGL\", \"state\": \"normal\", \"type\": \"pgl\" }, \"prof_admin\": { \"name\": \"Professor Administrator\", \"state\": \"\", \"type\": \"prof_admin\" }, \"professor\": { \"name\": \"Professor Basic\", \"state\": \"normal\", \"type\": \"professor\" }, \"professor-stage1\": { \"name\": \"Professor Stage 1\", \"state\": \"normal\", \"type\": \"professor-stage1\" }, \"professor-stage2\": { \"name\": \"Professor Stage 2\", \"state\": \"normal\", \"type\": \"professor-stage2\" }, \"rewards_admin\": { \"name\": \"Player Rewards Administrator\", \"state\": \"\", \"type\": \"rewards_admin\" }, \"tcgo\": { \"name\": \"TCGO\", \"state\": \"normal\", \"type\": \"tcgo\" }, \"to_exempt\": { \"name\": \"Exempt Tournament Organizer\", \"state\": \"normal\", \"type\": \"to_exempt\" }, \"to_new\": { \"name\": \"New Tournament Organizer\", \"state\": \"normal\", \"type\": \"to_new\" }, \"tournament_admin\": { \"name\": \"Tournament Organizer Administrator\", \"state\": \"\", \"type\": \"tournament_admin\" }, \"tournament_organizer\": { \"name\": \"Tournament Organizer\", \"state\": \"normal\", \"type\": \"tournament_organizer\" } }".
+groups: "\"groups\": [ \"Group::tournament_admin::\", \"Group::content_admin::\", \"Group::developer::\", \"Group::admin::\", \"Group::to_exempt::normal\", \"Group::tcgo::normal\", \"Group::to_new::normal\", \"Group::pcom::\", \"Group::rewards_admin::\", \"Group::professor-stage2::normal\", \"Group::professor-stage1::normal\", \"Group::tournament_organizer::normal\", \"Group::pgl::normal\", \"Group::prof_admin::\", \"Group::cards_admin::\", \"Group::league_admin::\", \"Group::professor::normal\", \"Group::organized_play::normal\" ]".
