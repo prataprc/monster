@@ -1,0 +1,35 @@
+s : composite.
+
+composite : array
+          | object.
+
+object : (weigh 0.1 0.1) "{" properties "}"
+       | (weigh 0.1 0.1) "{}".
+
+properties : (weigh 0.1 0.1) property
+           | (weigh 0.3 0.1) properties "," property.
+
+property   : DQ (bag "./web2") DQ ":" value.
+
+array   : (weigh 0.1 0.1) "[" basic "," values "," basic "," values "," basic "]"
+        | (weigh 0.1 0.1) "[]".
+
+value   : (weigh 0.1 0.1) array
+        | (weigh 0.2 0.1) object
+        | (weigh 0.3 0.1) basic.
+
+values  : value
+        | values "," value.
+
+basic   : (weigh 0.1 0.1) bool
+        | (weigh 0.2 0.1) integer
+        | (weigh 0.3 0.1) float
+        | (weigh 0.4 0.1) string.
+
+null    : (weigh 0.2 0.1) "null".
+bool    : (weigh 0.1 0.1) "true"
+        | (weigh 0.3 0.1) "false".
+integer : (weigh 0.2 0.1) (range -100000 100000).
+float   : (weigh 0.3 0.1) (rangef -100.0 100.0).
+string  : DQ (bag "./web2") DQ.
+
