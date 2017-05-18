@@ -1,0 +1,45 @@
+(let guid (uuid))
+
+s : "{ " properties "}".
+
+properties  : type ",\n"
+              docid ",\n"
+              age ",\n"
+              company ",\n"
+              "\"first-name\": \"" fname DQ ",\n"
+              field4k ",\n"
+              lastname.
+
+type       : "\"type\": \"user\"".
+docid      : "\"docid\": \"" (sprintf "User-%v" $guid) DQ.
+age        : "\"age\": " (range 15 80).
+company    : "\"company\": \"" (bag "./companies") DQ.
+fname      : (bag "./propernames").
+lastname   : "\"last-name\": \""  (bag "./propernames") DQ.
+field4k    : "\"field4k\": "
+             DQ (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             (bag "./lines") (bag "./lines") (bag "./lines") (bag "./lines")
+             DQ.

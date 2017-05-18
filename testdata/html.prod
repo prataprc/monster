@@ -1,0 +1,10 @@
+s : "<table>\n" rows "</table>".
+
+rows : (weigh 0.5) "  <tr> " cols "</tr>\n" rows
+     | (weigh 0.8) "  <tr> " cols "</tr>\n".
+
+cols : col1 col2 col3.
+
+col1 : "<td>col1</td> ".
+col2 : "<td>col2</td> ".
+col3 : "<td>col3</td> ".

@@ -1,0 +1,11 @@
+s : "{ " properties "}".
+
+properties  : DQ "type"     DQ ": " DQ "project" DQ ", " NL
+              DQ "name"     DQ ": " DQ (bag "./propernames") DQ ", " NL
+              DQ "field1" DQ ": " DQ (bag "./lines") (bag "./lines") DQ ", " NL
+              DQ "field2" DQ ": " DQ (bag "./lines") (bag "./lines") DQ ", " NL
+              DQ "field3" DQ ": " DQ (bag "./lines") (bag "./lines") DQ ", " NL
+              DQ "field4" DQ ": " DQ (bag "./lines") (bag "./lines") DQ ", " NL
+              DQ "field5" DQ ": " DQ (bag "./lines") (bag "./lines") DQ ", " NL
+              DQ "field6" DQ ": " DQ (bag "./lines") (bag "./lines") DQ ", " NL
+              DQ "field7" DQ ": " DQ (bag "./lines") (bag "./lines") DQ NL.

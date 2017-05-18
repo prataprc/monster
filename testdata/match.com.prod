@@ -1,0 +1,17 @@
+(let uidn (unixnano))
+
+s : "{ " properties "}".
+
+properties: count ", "
+            uid ", "
+            vbyuid ", "
+            lvdt ", "
+            pimid ", "
+            type ", "
+            adt.
+
+count : "\"Cnt\": " (range 1 100).
+uid   : "\"UID\": " $uidn.
+vbyuid: "\"VByUID\": " (sprintf "%.0f" (multf $uidn 1.2)).
+lvdt  : "\"LVDt\": \"3/20/10 12:00 AM\"".
+type  : "\"Type\" : \"pv\"".

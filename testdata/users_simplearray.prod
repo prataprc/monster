@@ -1,0 +1,53 @@
+(let guid (uuid))
+
+s : "{ " properties "}".
+
+properties  : type ",\n"
+              docid ",\n"
+              age ",\n"
+              eyecolor ",\n"
+              active ",\n"
+              balance ",\n"
+              company ",\n"
+              "\"first-name\": \"" fname DQ ",\n"
+              lastname ",\n"
+              emailid ",\n"
+              picture ",\n"
+              gender ",\n"
+              phone ",\n"
+              address ",\n"
+              registered ",\n"
+              friends.
+
+type       : "\"type\": \"user\"".
+docid      : "\"docid\": \"" (sprintf "User-%v" $guid) DQ.
+age        : "\"age\": " (range 15 80).
+eyecolor   : "\"eyeColor\": \"" (choice "brown" "blue" "green") DQ.
+active     : "\"isActive\": " (choice "true" "false").
+balance    : "\"balance\": \"" (sprintf "$%.2f" (rangef 100000.0)) DQ.
+company    : "\"company\": \"" (bag "./companies") DQ.
+fname      : (bag "./propernames").
+lastname   : "\"last-name\": \""  (bag "./propernames") DQ.
+emailid    : "\"emailid\": \"" $fname "@gmail.com" DQ.
+picture    : "\"picture\": \"" pictureurl DQ.
+  pictureurl : (sprintf "http://placehold.it/%s" $fname).
+gender     : "\"gender\": \"" (choice "male" "female") DQ.
+phone      : "\"phone\": \"" phonenum DQ.
+  phonenum : (sprintf "+%2d (%3d) %3d-%d4"
+                (range 1 99) (range 1 999) (range 1 999) (range 1 9999)).
+address    : "\"address\": { " number street city state pin " }".
+  number   : "\"number\": " (range 1 1000) ", ".
+  street   : "\"street\": \"" "President Street" DQ ",".
+  city     : "\"city\": \"" (bag ./cities) DQ ", ".
+  state    : "\"state\": \"" "Marshall Islands" DQ ", ".
+  pin      : "\"pin\": " (range 0 999999).
+
+registered : "\"registered\": \"" regtime DQ.
+  regtime  : (ranget "2006-01-02T15:04:05Z" "2009-01-02T15:04:05Z").
+
+friends    : (let friendcount 0) "\"friends\": [ " fewfriends " ]\n".
+fewfriends : (weigh 0.1) frienddoc
+           | (weigh 0.8 0.3) frienddoc ", " (inc friendcount) fewfriends.
+frienddoc  : frname .
+  id       : "\"id\": " $friendcount ", ".
+  frname   : "\"" (bag "./propernames") DQ.
