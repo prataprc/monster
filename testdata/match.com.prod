@@ -6,9 +6,7 @@ properties: count ", "
             uid ", "
             vbyuid ", "
             lvdt ", "
-            pimid ", "
-            type ", "
-            adt.
+            type ", ".
 
 count : "\"Cnt\": " (range 1 100).
 uid   : "\"UID\": " $uidn.
