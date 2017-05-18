@@ -168,6 +168,7 @@ func evaluate(name string, scope common.Scope, forms []*common.Form) interface{}
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("%v", r)
+			fmt.Printf("%v\n", getStackTrace(2, debug.Stack()))
 		}
 	}()
 	return monster.EvalForms(name, scope, forms)

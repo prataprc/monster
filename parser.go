@@ -102,7 +102,7 @@ var term = parsec.Token(`[A-Z][A-Z0-9]*`, "TERM")
 var sTring = parsec.String()
 var literaltok = parsec.OrdChoice(
 	litNode,
-	parsec.Float(), parsec.Hex(), parsec.Oct(), parsec.Int(),
+	parsec.Hex(), parsec.Oct(), parsec.Float(), parsec.Int(),
 	parsec.String(),
 	parsec.Token(`true`, "TRUE"), parsec.Token(`false`, "FALSE"))
 var openparan = parsec.Token(`\(`, "OPENPARAN")
