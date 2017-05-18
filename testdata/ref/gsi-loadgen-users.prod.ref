@@ -1,0 +1,10 @@
+{ "type": "user",
+"docid": "User-3330748265099048101",
+"age": 60,
+"isActive": true,
+"company": "ECOLIGHT",
+"first-name": "Sidney",
+"last-name": "Pablo",
+"emailid": "Sidney@gmail.com",
+"gender": "female"}
+Completed !!

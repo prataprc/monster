@@ -1,0 +1,18 @@
+{ "type": "user",
+"docid": "User-318433748404414419",
+"age": 60,
+"eyeColor": "green",
+"isActive": true,
+"balance": "$81364.00",
+"company": "PEARLESEX",
+"first-name": "Oskar",
+"last-name": "Plastic",
+"emailid": "Oskar@gmail.com",
+"picture": "http://placehold.it/Oskar",
+"gender": "male",
+"phone": "+88 ( 45) 381-12654",
+"address": { "number": 711, "street": "President Street","city": "Hargeisa", "state": "Marshall Islands", "pin": 346328 },
+"registered": "2008-08-20T03:27:01Z",
+"friends": [ "Jin", "Sanche", "Penny", "Donald" ]
+}
+Completed !!
