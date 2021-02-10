@@ -1,8 +1,6 @@
 README
 ======
 
-[![IRC #go-nuts](https://www.irccloud.com/invite-svg?channel=%23go-nuts&amp;hostname=chat.freenode.net&amp;port=6697&amp;ssl=1)](https://www.irccloud.com/invite?channel=%23go-nuts&amp;hostname=chat.freenode.net&amp;port=6697&amp;ssl=1)
-
 Monster is a grammar based production tool. At present I am using this to
 generate json documents using production grammar.
 
